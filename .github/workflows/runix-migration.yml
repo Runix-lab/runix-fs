@@ -26,7 +26,9 @@ jobs:
       - name: Run negative migration tests
         run: python -m unittest discover -s scripts/runix -p 'test_*.py' -v
       - name: Check patch whitespace
-        run: git diff-tree --check -m HEAD
+        # The archived upstream README is intentionally preserved byte for byte,
+        # including its historical whitespace; provenance validation checks it.
+        run: git diff-tree --check -m HEAD -- . ':(exclude)README.upstream.md'
 
   core-smoke:
     name: Linux fault runtime unit smoke (subset)

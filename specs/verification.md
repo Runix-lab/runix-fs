@@ -27,8 +27,8 @@ Date: 2026-10-21 (America/Los_Angeles).
 
 The first attempt using the named `1.98` channel triggered a local rustup
 installation/recovery error before compilation; it was not a failing code test.
-The installed stable 1.98.0 toolchain completed the above tests. The dedicated
-Linux CI installs the pinned 1.98 channel separately.
+The named toolchain was subsequently repaired to 1.98.1 and completed the same
+19 tests successfully; installed stable 1.98.0 passed them independently.
 
 ## Publication follow-up
 
@@ -36,6 +36,13 @@ The Runix Migration Checks workflow runs the migration checks and the existing
 fault-runtime unit subset on Linux. A green result does not establish full
 cluster, FUSE, CSI, S3 or commercial readiness. Record the published commit and
 actual CI conclusion after push.
+
+Initial published migration commit: `6476faec3e08eaf776c2a2a0d994c74d056a6a45`.
+Linux CI run `39718596322` passed all 19 fault-runtime tests and all six migration
+tests. Its whitespace step flagged the original upstream README's line 9 trailing
+space. Preserve this archived document byte for byte and exclude only that file
+from whitespace checks; the provenance verifier still rejects any byte change.
+The first run's overall conclusion was failure, not a fully green migration.
 
 Website verification, deployment and publication commits belong to the separate
 website repository. The migration introduces no commercial service, production
