@@ -44,6 +44,18 @@ space. Preserve this archived document byte for byte and exclude only that file
 from whitespace checks; the provenance verifier still rejects any byte change.
 The first run's overall conclusion was failure, not a fully green migration.
 
+Follow-up commit `7e11b8889882cc7375602565e91b5afb07e4372b` fixed only the archive
+whitespace policy and recorded the result. Linux run `39718783390` completed
+with **success**: both migration and fault-runtime smoke jobs passed. Independent
+review confirmed ordinary README whitespace errors remain rejected while any
+archive byte change remains rejected by provenance checks.
+
+The main website's `/fs` and `/docs/fs` were independently fetched after
+publication: both linked to `Runix-lab/runix-fs`, product attribution still linked
+to Curvine, and the docs displayed master 9001 / worker 9002. The site deployment
+was explicitly approved by the owner before publication. Product-mirror
+deployment evidence belongs to the website repository's publishing record.
+
 Website verification, deployment and publication commits belong to the separate
 website repository. The migration introduces no commercial service, production
 storage cluster, AWS listing, subscription grant or billing transaction.

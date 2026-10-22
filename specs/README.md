@@ -13,6 +13,7 @@ implementation and verification evidence.
 | [Commercial service](commercial-service.md) | AWS delivery, identity, entitlement and metering design |
 | [Website](website-integration.md) | Public website and future authenticated console integration |
 | [Roadmap](roadmap.md) | Dependency order and acceptance gates for subsequent development |
+| [Verification](verification.md) | Actual migration tests, CI results and publication boundaries |
 
 Every backend API change must include unit tests for success, validation,
 authorization, failure and applicable replay/concurrency behavior. Every change
