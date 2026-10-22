@@ -1,0 +1,40 @@
+name: Runix Migration Checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validation dependency
+        run: python -m pip install PyYAML==6.0.2
+      - name: Verify provenance and publisher isolation
+        run: python scripts/runix/verify_migration.py
+      - name: Run negative migration tests
+        run: python -m unittest discover -s scripts/runix -p 'test_*.py' -v
+      - name: Check patch whitespace
+        run: git diff-tree --check -m HEAD
+
+  core-smoke:
+    name: Linux fault runtime unit smoke (subset)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Rust channel
+        run: rustup toolchain install 1.98 --profile minimal
+      - name: Test existing fault runtime
+        run: cargo test --locked -p curvine-fault --features fault-injection

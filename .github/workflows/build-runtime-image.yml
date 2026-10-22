@@ -1,3 +1,4 @@
+# Modified by Runix Lab: restrict inherited publishing to the upstream repository.
 name: Build Runtime Docker Image
 
 on:
@@ -29,6 +30,7 @@ permissions:
 jobs:
   # Prepare metadata shared across all jobs
   prepare:
+    if: github.repository == 'CurvineIO/curvine'
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
@@ -85,6 +87,7 @@ jobs:
 
   # Build for each architecture on native runners
   build-arch:
+    if: github.repository == 'CurvineIO/curvine'
     needs: prepare
     strategy:
       matrix:
@@ -142,7 +145,7 @@ jobs:
   create-manifest:
     needs: [prepare, build-arch]
     runs-on: ubuntu-latest
-    if: needs.prepare.outputs.push_image == 'true'
+    if: ${{ github.repository == 'CurvineIO/curvine' && (needs.prepare.outputs.push_image == 'true') }}
     steps:
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -203,7 +206,7 @@ jobs:
   summary:
     needs: [prepare, build-arch, create-manifest]
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ github.repository == 'CurvineIO/curvine' && (always()) }}
     steps:
       - name: Final build summary
         run: |

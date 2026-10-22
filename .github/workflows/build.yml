@@ -1,3 +1,4 @@
+# Modified by Runix Lab: skip docs/policy-only pushes; engine CI remains manually runnable.
 name: Compile and Smoke Test
 
 on:
@@ -5,6 +6,12 @@ on:
     branches:
       - 'main'
       - 'release/**'
+    paths-ignore:
+      - '**/*.md'
+      - 'specs/**'
+      - 'NOTICE'
+      - 'scripts/runix/**'
+      - '.github/workflows/**'
   pull_request:
     branches:
       - '**'

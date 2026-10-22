@@ -1,3 +1,7 @@
+> **Runix FS 派生版说明（2026-10-21）**：本仓库由 Runix Lab 维护，基于 Apache-2.0 的 Curvine。产品入口为 [Runix FS](https://runixcloud.io/fs)，开发以 [specs](specs/README.md) 为准。以下为保留的上游说明，性能数据和社区链接属于上游，不代表 Runix 服务承诺。
+>
+> Modification notice: Runix Lab added this fork-identification banner; upstream content follows unchanged.
+
 <div align=center>
 <img src="https://raw.githubusercontent.com/CurvineIO/curvine-doc/refs/heads/main/static/img/curvine_logo.svg",  width="180" height="200">
 </div>

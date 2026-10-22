@@ -1,3 +1,20 @@
+# Runix FS development contract
+
+Modification notice: Runix Lab added the fork-specific contract on 2026-10-21.
+The upstream skills registry below is preserved.
+
+- Product: Runix FS; origin: `Runix-lab/runix-fs`; upstream: `CurvineIO/curvine`.
+- Read `specs/README.md` and applicable contracts before implementation.
+- Every backend API change requires unit tests; include authorization, validation,
+  failures and replay/concurrency cases where applicable.
+- Every modification must have a Git commit. Do not commit credentials or runtime data.
+- Preserve Apache-2.0 LICENSE and attribution. Modified upstream files must carry
+  a prominent modification notice. Preserve internal names until a tested migration.
+- Keep cluster Web/RPC private; planned SaaS billing and tenant boundaries are not
+  implemented merely because a fork or website link exists.
+- Runix release workflows must target Runix registries and repositories; inherited
+  upstream publisher workflows are intentionally guarded.
+
 
 
 <skills_system priority="1">

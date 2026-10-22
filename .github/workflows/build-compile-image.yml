@@ -1,3 +1,4 @@
+# Modified by Runix Lab: restrict inherited publishing to the upstream repository.
 name: Build Compile Docker Image
 
 on:
@@ -25,6 +26,7 @@ permissions:
 
 jobs:
   prepare:
+    if: github.repository == 'CurvineIO/curvine'
     runs-on: ubuntu-latest
     outputs:
       build_matrix: ${{ steps.set-matrix.outputs.build_matrix }}
@@ -121,6 +123,7 @@ jobs:
 
   # Build for each selected build type and architecture on native runners
   build-image:
+    if: github.repository == 'CurvineIO/curvine'
     needs: prepare
     strategy:
       fail-fast: false
@@ -169,7 +172,7 @@ jobs:
   create-manifest:
     needs: [prepare, build-image]
     runs-on: ubuntu-latest
-    if: inputs.push_image == true
+    if: ${{ github.repository == 'CurvineIO/curvine' && (inputs.push_image == true) }}
     strategy:
       matrix:
         include: ${{ fromJSON(needs.prepare.outputs.manifest_matrix) }}
@@ -238,7 +241,7 @@ jobs:
   summary:
     needs: [prepare, build-image, create-manifest]
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ github.repository == 'CurvineIO/curvine' && (always()) }}
     steps:
       - name: Final build summary
         env:

@@ -1,3 +1,4 @@
+# Modified by Runix Lab: restrict inherited publishing to the upstream repository.
 name: Release
 
 on:
@@ -16,6 +17,7 @@ env:
 jobs:
   # Build Rocky Linux 9 binary file
   build:
+    if: github.repository == 'CurvineIO/curvine'
     name: Build for Rocky Linux 9
     runs-on: ubuntu-latest
     container:
@@ -75,6 +77,7 @@ jobs:
 
   # Create GitHub Release
   release:
+    if: github.repository == 'CurvineIO/curvine'
     name: Create Release
     needs: build
     runs-on: ubuntu-latest

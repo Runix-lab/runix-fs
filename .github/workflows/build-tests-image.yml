@@ -1,3 +1,4 @@
+# Modified by Runix Lab: restrict inherited publishing to the upstream repository.
 name: Build Tests Docker Image
 
 on:
@@ -15,6 +16,7 @@ permissions:
 
 jobs:
   build-image:
+    if: github.repository == 'CurvineIO/curvine'
     strategy:
       matrix:
         include:
@@ -66,7 +68,7 @@ jobs:
   create-manifest:
     needs: build-image
     runs-on: ubuntu-latest
-    if: inputs.push_image == 'true' || inputs.push_image == true
+    if: ${{ github.repository == 'CurvineIO/curvine' && (inputs.push_image == 'true' || inputs.push_image == true) }}
     steps:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -110,7 +112,7 @@ jobs:
   summary:
     needs: [build-image, create-manifest]
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ github.repository == 'CurvineIO/curvine' && (always()) }}
     steps:
       - name: Final build summary
         run: |

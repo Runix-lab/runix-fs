@@ -1,3 +1,4 @@
+# Modified by Runix Lab: restrict inherited publishing to the upstream repository.
 name: Trigger Helm Release
 
 on:
@@ -26,6 +27,7 @@ concurrency:
 
 jobs:
   trigger-helm-release:
+    if: github.repository == 'CurvineIO/curvine'
     name: Wait for images and dispatch helm release
     runs-on: ubuntu-latest
     timeout-minutes: 120
