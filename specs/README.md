@@ -11,6 +11,7 @@ implementation and verification evidence.
 | [Migration](migration.md) | Repository, branding, licensing, CI and ownership |
 | [Architecture](architecture.md) | Source map and verified implementation boundaries |
 | [Commercial service](commercial-service.md) | AWS delivery, identity, entitlement and metering design |
+| [Marketplace listing](marketplace-listing.md) | Seller evidence, draft identity, publication gates and outstanding commercial decisions |
 | [Website](website-integration.md) | Public website and future authenticated console integration |
 | [Roadmap](roadmap.md) | Dependency order and acceptance gates for subsequent development |
 | [Verification](verification.md) | Actual migration tests, CI results and publication boundaries |
