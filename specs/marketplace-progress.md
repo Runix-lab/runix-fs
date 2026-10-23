@@ -17,24 +17,44 @@
 - Checked empty SaaS products and five completed/failed seller-setting requests.
   Created `prod-xw6kihs3wveu2` / `m9i25gk20n1l4tvuild27fwd`, title Runix FS Cloud
   Service; observed **Staging**. ID generation request Succeeded.
-- First create-wizard save returned to Staging but Product information still
-  showed only the title. Do not treat that as saved full listing content.
-  A separate Update product information request is being used to persist it.
+- First create-wizard save returned to Staging; the detail page initially still
+  showed only the title. It subsequently completed as **Save updates**, request
+  `a830jbxslo7l54441i16iua6u`, Succeeded at 16:09 GMT+8. Its request detail confirms
+  the logo, short/long descriptions, three highlights, support details, Storage
+  category and seven keywords. It also created an incomplete offer entity.
+- A separately prepared update against revision 1 was rejected as an old
+  product revision. Do not resubmit it. Its optional learning-resource additions
+  were not saved; the successful original already includes the docs URL in
+  support and the source URL in its description. The live site URL is in this
+  specification, not yet a saved learning resource.
+- Latest price configuration explicitly says **No pricing dimension**;
+  fulfillment explicitly says **No fulfillment option**. No pricing model was
+  selected or locked by publishing to Limited.
 - No Limited visibility, paid offer, public review submission, buyer purchase,
   cluster deployment or public availability has been verified.
 - Inspected live reference listing and refreshed official AWS integration docs.
   Found conflicting cancellation-window wording; PAYG remains deferred.
 - Source inspection found no commercial control plane. Local website checkout
   contains unrelated uncommitted edits; none were changed or staged.
+- Implemented a non-deployed ContractGateway SDK adapter and tests, preserving
+  engine code and Apache attribution. boto3/botocore 1.43.118 service models
+  include Concurrent Agreements fields. Nineteen adapter tests plus six existing
+  migration tests pass; provenance verification, Python compilation and
+  `git diff --check` pass. No real AWS API was invoked by these tests.
+- Docker Desktop now reports a Linux daemon after starting the installed app;
+  no Runix/Curvine image is present. No filesystem smoke or recovery result is
+  claimed. The cloud test budget is prepared in marketplace-test-plan.md.
 
 ## Resume safely
 
 1. Open the existing seller product link in marketplace-listing.md. Check its
    request log before retrying any submitted update; never recreate the product.
-2. Confirm persisted information fields and record the actual update request ID.
+2. Reuse successful Save updates request `a830jbxslo7l54441i16iua6u` as evidence.
+   Check latest product revision before any future update.
 3. Keep model/prices/terms/fulfillment empty until approved and deliverable.
-4. Continue the implementation slice and unit tests described in the listing
-   contract. Add actual SDK/test results here when completed.
+4. Continue beyond the SDK adapter into real identity, durable org/license
+   binding, private provisioning and lifecycle handling. Unit tests are not
+   evidence of deployment, end-to-end authentication, quota or storage delivery.
 5. Prepare an explicit infrastructure budget and obtain approval before creating
    any resources. Real purchase tests need a buyer identity and spending cap.
 

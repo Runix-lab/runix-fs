@@ -11,8 +11,10 @@ An AI filesystem maintained by **Runix Lab**, based on the Apache-2.0
 Runix FS provides the starting point for AI Agent workspaces, dataset access
 and checkpoint storage over object storage. This public fork preserves the
 upstream history and engine compatibility. Managed AWS delivery, subscriptions
-and Marketplace integration are planned in the specs; this migration does not
-ship a hosted service, Marketplace listing or a new performance guarantee.
+and production Marketplace integration remain in development. A non-public
+[Marketplace Staging product](specs/marketplace-listing.md) now exists, with an
+offline-tested AWS registration/Contract entitlement adapter. There is no public
+offer, hosted service, approved price or new performance guarantee.
 
 ## Start developing
 

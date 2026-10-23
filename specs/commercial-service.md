@@ -1,8 +1,9 @@
 # AWS commercial service design
 
-Status: design contract; no Marketplace product, commercial API, paid cluster
-or billing integration is deployed by this migration. Official sources below
-were retrieved on 2026-10-21 (America/Los_Angeles).
+Status: design contract plus an offline-tested AWS adapter. A non-public Staging
+product was created on 2026-10-23; see marketplace-listing.md. No commercial HTTP
+API, paid cluster or billing integration is deployed. Baseline official sources
+were retrieved on 2026-10-21; listing notes record the 2026-10-23 refresh.
 
 ## Product and charging models
 
@@ -94,6 +95,12 @@ The current subscription guide allows one hour for remaining metering after an
 agreement ends, before license deprovisioning. Store the event and deadline and
 prioritize the final durable usage flush.
 
+The 2026-10-23 EventBridge guide instead describes license deprovisioning as the
+start of the one-hour window. This conflicts with the subscription guide above.
+Do not implement PAYG cancellation against either assumption until the applicable
+AWS integration lifecycle is confirmed. Stop accumulating new charges at known
+cancellation; never use the ambiguity to extend billable access.
+
 ## Usage, limits and billing
 
 Select a small number of explicit dimensions after cost measurements, such as
@@ -175,3 +182,28 @@ before any paid activation. Publication and real charges require owner approval.
 AWS documentation contains legacy fields alongside new-integration notes. The
 new-integration rules above take precedence for this planned product; confirm
 the live SDK model and listing's integration generation during implementation.
+
+## Implemented adapter boundary, 2026-10-23
+
+`scripts/runix/marketplace_adapter.py` provides `ContractGateway.from_session`
+using one caller-provided boto3 Session with its normal credential chain, in
+us-east-1. It verifies the caller's seller account with STS before Marketplace
+calls. It redeems registration tokens, requires account, product, license and
+Metadata.AgreementId, and verifies a positive integer Contract entitlement by
+product/account/license/dimension with bounded pagination and explicit expiry.
+AWS errors, missing metadata, unknown identities and ambiguous grants deny access.
+
+This adapter has no HTTP listener, login, organization binding, storage, events,
+provisioning or metering. It does not authorize a browser user merely because a
+registration token resolves. Returned quantities are current verification
+results, never additive capacity grants. Replays of reads do not allocate
+anything. A future service must provide a durable unique license binding,
+freshness policy, authenticated organization ownership and atomic reservations.
+No claim of completed organization authentication or replay-safe provisioning
+is made by these SDK tests.
+
+Install `scripts/runix/requirements-marketplace.txt` into an isolated environment
+and run `python -m unittest discover -s scripts/runix -p test_marketplace_adapter.py -v`.
+Tests use actual botocore 1.43.118 models and Stubber, not real purchases. The
+SDK model includes LicenseArn, Metadata.AgreementId and the LICENSE_ARN filter.
+No CustomerIdentifier dependency or BatchMeterUsage invocation is introduced.
