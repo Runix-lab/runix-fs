@@ -19,7 +19,8 @@ class MigrationChecks(unittest.TestCase):
         self.root = Path(self.temp.name)
         source = Path(__file__).resolve().parents[2]
         for name in (
-            "LICENSE", "NOTICE", "README.md", "README.upstream.md", "AGENTS.md"
+            "LICENSE", "NOTICE", "README.md", "README.upstream.md", "AGENTS.md",
+            "QUICK-LEARN.zh-CN.md",
         ):
             shutil.copyfile(source / name, self.root / name)
         shutil.copytree(source / "specs", self.root / "specs")
