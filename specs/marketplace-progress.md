@@ -1,5 +1,26 @@
 # Marketplace progress log
 
+## 2026-10-26, Asia/Shanghai
+
+- Owner approved the exact $5 private smoke-test budget previously proposed;
+  no repeat budget approval is needed within that inventory, lifetime and scope.
+  Actual cloud spending in this resumed work remains zero so far.
+- Owner requested a version following JuiceFS. Prepared Runix-authored draft
+  v1 in marketplace-reference-draft.md, including the usage-based candidate
+  model and required unit/cost decisions. No competitor price, legal term,
+  capacity limit or SLA was made effective for Runix.
+- CLI STS identity check returned NoCredentials. Browser session had expired;
+  owner logged in again. The live Marketplace page then confirmed Runix Lab
+  account 712565469991, the existing product and Staging status. Request log
+  still contained two requests. No duplicate product or seller registration.
+- Preparing CloudShell as a session-bound deployment channel rather than
+  requesting or extracting long-lived keys. No browser cookies were read.
+- Downloaded the upstream CI build/test image pinned to amd64 digest
+  sha256:841254160ea7b619964c5be225e1c5bb5891c1ec91f0d641c2a210db2701cb9d.
+  This is a tool image, not a newly built or verified Runix engine artifact.
+  Docker stopped before the first environment-probe container could run;
+  recovery is in progress. No filesystem smoke result is claimed.
+
 ## 2026-10-23, Asia/Shanghai
 
 - Requested workspace was an empty Git repository with no commits or specs.

@@ -1,8 +1,10 @@
 # Marketplace delivery verification and budget proposal
 
-Status: proposed, not approved or provisioned. Prices checked 2026-10-23.
-This plan does not authorize any charges. No production capacity or SLA follows
-from a small functional test.
+Status: the owner approved the $5 test budget on 2026-10-26 for the resource
+inventory and two-hour test below. No resources have been provisioned yet.
+The approval excludes Marketplace purchases and continuing production resources.
+Price references were checked 2026-10-23 and must be refreshed before launch.
+No production capacity or SLA follows from a small functional test.
 
 ## Local preparation
 
@@ -29,7 +31,7 @@ two hours after readiness of the prebuilt image and deployment access.
 | Logs and miscellaneous transfer | At most 0.5 GB logs and 1 GB total test transfer | Allow $0.50; no cross-region traffic |
 | IAM roles/profiles | Restricted instance access to its own bucket/prefix and SSM | Review exact policies before granting access; no persistent access keys |
 
-Expected short test: roughly **$1-$3 before tax**. Proposed authorized test
+Expected short test: roughly **$1-$3 before tax**. Owner-approved test
 budget: **$5**, excluding any Marketplace subscription. The $0.09 instance-hour
 is a conservative planning allowance, not a claimed live EC2 tariff. AWS's T3
 table currently displays $0.0835 for t3.large, while its us-east-1 prescriptive
