@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Modification notice: Runix Lab preserves the configured metadata WAL policy and adds crash regression tests, 2026-10-26.
 use crate::master::meta::inode::InodeView;
 use crate::master::meta::LockMeta;
 use curvine_core_error::CommonResult;
@@ -44,7 +45,6 @@ impl RocksInodeStore {
 
     pub fn new(conf: DBConf, format: bool) -> CommonResult<Self> {
         let conf = conf
-            .set_disable_wal(true)
             .add_cf(Self::CF_INODES)
             .add_cf(Self::CF_EDGES)
             .add_cf(Self::CF_BLOCK)
@@ -422,6 +422,74 @@ mod tests {
     use curvine_model::StorageType;
     use curvine_rocksdb::perf::{set_perf_stats, PerfContext, PerfMetric, PerfStatsLevel};
     use curvine_runtime::common::Utils;
+
+    #[test]
+    fn metadata_store_preserves_configured_wal_policy() {
+        for disable_wal in [false, true] {
+            let directory = std::env::temp_dir().join(format!(
+                "runix-meta-wal-policy-{}-{}",
+                std::process::id(),
+                Utils::rand_str(12)
+            ));
+            {
+                let conf = DBConf::new(directory.to_str().unwrap()).set_disable_wal(disable_wal);
+                let store = RocksInodeStore::new(conf, false).unwrap();
+                assert_eq!(store.db.conf().disable_wal, disable_wal);
+            }
+            std::fs::remove_dir_all(directory).unwrap();
+        }
+    }
+
+    #[test]
+    fn metadata_wal_crash_writer() {
+        let Some(directory) = std::env::var_os("RUNIX_METADATA_WAL_CRASH_DIR") else {
+            return;
+        };
+        let directory = std::path::PathBuf::from(directory);
+        let conf = DBConf::new(directory.to_str().unwrap()).set_disable_wal(false);
+        let store = RocksInodeStore::new(conf, false).unwrap();
+        store
+            .db
+            .put_cf(
+                RocksInodeStore::CF_COMMON,
+                b"crash-key",
+                b"acknowledged-value",
+            )
+            .unwrap();
+        std::process::exit(0);
+    }
+
+    #[test]
+    fn metadata_wal_recovers_without_destructor_flush() {
+        let directory = std::env::temp_dir().join(format!(
+            "runix-meta-wal-crash-{}-{}",
+            std::process::id(),
+            Utils::rand_str(12)
+        ));
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .arg("--exact")
+            .arg(format!(
+                "{}::metadata_wal_crash_writer",
+                module_path!().split_once("::").unwrap().1
+            ))
+            .arg("--nocapture")
+            .env("RUNIX_METADATA_WAL_CRASH_DIR", &directory)
+            .status()
+            .unwrap();
+        assert!(status.success());
+        {
+            let conf = DBConf::new(directory.to_str().unwrap()).set_disable_wal(false);
+            let store = RocksInodeStore::new(conf, false).unwrap();
+            assert_eq!(
+                store
+                    .db
+                    .get_cf(RocksInodeStore::CF_COMMON, b"crash-key")
+                    .unwrap(),
+                Some(b"acknowledged-value".to_vec())
+            );
+        }
+        std::fs::remove_dir_all(directory).unwrap();
+    }
 
     #[test]
     fn reused_location_iterator_does_not_expand_corrupt_sst_scope() {

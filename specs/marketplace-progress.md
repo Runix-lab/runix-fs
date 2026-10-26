@@ -2,6 +2,17 @@
 
 ## 2026-10-26, Asia/Shanghai
 
+- Fixed RocksInodeStore overriding an explicit metadata WAL setting. Defaults
+  are unchanged; smoke configuration now explicitly enables WAL. All six
+  inode-store tests and rebuilt-server 4 MiB master-only, worker-only and both
+  process-crash recovery comparisons passed. Historical failures are retained
+  in marketplace-local-smoke.md, not silently relabelled as successes. This
+  does not establish multi-master Raft durability, S3, FUSE or SaaS readiness.
+- Browser extension control recovered. Reverified current account Runix Lab
+  712565469991 and existing product prod-xw6kihs3wveu2: Staging, last modified
+  Oct 26; Pricing configuration still says No pricing dimension. Local CLI
+  still has NoCredentials. No duplicate product or release request was made.
+
 - Executed the compiled engine, not a mock: 4 MiB CLI write/read and byte
   comparison passed in a network-disabled Linux container. Immediate master
   plus worker process-crash recovery failed with FileNotFound after 40 attempts.

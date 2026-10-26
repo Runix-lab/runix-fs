@@ -1,7 +1,9 @@
 # Local engine delivery gate: write/read and crash recovery
 
-Date: 2026-10-26, Asia/Shanghai. Result: **write/read passed; process-crash
-recovery failed**. This is not a production, S3, FUSE, HA or Marketplace test.
+Date: 2026-10-26, Asia/Shanghai. Baseline result: **write/read passed;
+process-crash recovery failed**. After the configuration repair below,
+WAL-enabled master-only, worker-only and simultaneous process-crash recovery
+passed. This is not a production, S3, FUSE, HA or Marketplace test.
 No cloud resources or Marketplace purchases were created for this test.
 
 ## Environment and provenance
@@ -42,7 +44,7 @@ docker run --rm --name runix-fs-marketplace-smoke \
   bash /run-smoke.sh
 ```
 
-The tested script SHA-256 is
+The original failing baseline script (commit 5d3d3b9) SHA-256 is
 `150e9d43cd92281f290136efcb83da2e7530f52cdb67fcc8651edb86fbc7cbb7`.
 It waits for a master report with available worker capacity before writing,
 uploads 4 MiB, downloads and byte-compares, sends SIGKILL to master and worker,
@@ -89,6 +91,34 @@ Do not mask loss by sleeping before the kill, force-formatting or returning
 successful provisioning. Do not change upstream storage semantics without
 matching specs, modification notice, unit tests and runtime regression results.
 
-FS release remains blocked by this recovery gate in addition to the unbuilt
-commercial registration, organization authorization, PAYG lifecycle and usage
-pipeline. No data-retention, backup, RPO or SLA claim follows from this test.
+## Configuration repair and verified reruns
+
+RocksInodeStore now preserves DBConf.disable_wal. The default MasterConf policy
+is unchanged; the smoke runner explicitly enables metadata WAL. It also rejects
+nonempty test directories and accepts only both/master/worker crash targets.
+This does not repair the asynchronous Raft acknowledgement boundary or establish
+multi-master consistency. Do not interpret a local WAL as quorum replication.
+
+All six inode-store unit tests passed, including both WAL policies, recovery of
+an acknowledged local DB write after a child exits without Rust destructors,
+and the three existing iterator/corrupt-SST tests. The child really executed
+one test; an initial helper-name error caused zero child tests and a parent
+failure, and was corrected before the passing run.
+
+The actual rebuilt server passed three isolated 4 MiB CLI write/read/crash/
+restart comparisons with no delay added before the kill:
+
+| Crash target | Payload and recovered SHA-256 | Local evidence directory |
+| --- | --- | --- |
+| Master and Worker | `2b71e13bba34ded99a361b09de16ec3e72ab6d69028e9d403bbe7cd359d02353` | `/tmp/runix-fs-wal-both.rc4Nx7/` |
+| Master only | `7799b824ebf7153d2c30fa027969d2ff8bcf6a0cb62e5d2ebac9499336a3066c` | `/tmp/runix-fs-wal-master.0gv1nP/` |
+| Worker only | `c1f1670e181b2f6b80a70b592559ae7d9a45b691606d21b47da803d2f6b2aa52` | `/tmp/runix-fs-wal-worker.2uLAa1/` |
+
+For individual targets, set RUNIX_SMOKE_CRASH_TARGET=master or worker in the
+container environment. Use a fresh evidence directory for every run. The above
+baseline binary hashes are historical, not the rebuilt server hash.
+
+FS release still requires S3 persistence/recovery, FUSE, three-master failover,
+backup/restore and the unbuilt commercial registration, organization
+authorization, PAYG lifecycle and usage pipeline. No power-loss, RPO or SLA
+claim follows from process-kill tests.

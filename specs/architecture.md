@@ -66,6 +66,16 @@ service has been penetrated or that every potential implementation is absent.
 
 ## Development and test gates
 
+### Metadata WAL configuration repair
+
+Runix repair scope, 2026-10-26: RocksInodeStore must preserve the supplied
+DBConf.disable_wal instead of unconditionally forcing true. MasterConf's
+existing default remains unchanged. Tests must cover both configured policies
+and WAL-enabled writes recovered after a child exits without Rust destructors.
+This is a local metadata configuration correction, not a Raft commit barrier,
+power-loss guarantee or proof of HA. The full process-crash smoke remains a
+separate required gate. Do not change default durability/performance claims.
+
 Read `rust-toolchain.toml` (pinned channel 1.98), `Cargo.lock`, Makefile and
 `.github/workflows/build.yml` together. Native dependencies include RocksDB,
 protobuf tooling, compiler/linker and optional JVM/HDFS/FUSE dependencies. Use

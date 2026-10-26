@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
+crash_target="${RUNIX_SMOKE_CRASH_TARGET:-both}"
+if [[ "$crash_target" != both && "$crash_target" != master && "$crash_target" != worker ]]; then
+    echo 'RUNIX_SMOKE_CRASH_TARGET must be both, master or worker' >&2
+    exit 2
+fi
 cd /smoke
+if [[ -e cluster.toml || -e data ]]; then
+    echo 'Use a fresh empty /smoke directory; existing test state is preserved' >&2
+    exit 2
+fi
 export CURVINE_MASTER_HOSTNAME=127.0.0.1
 export CURVINE_WORKER_HOSTNAME=127.0.0.1
 export CURVINE_JOURNAL_HOSTNAME=127.0.0.1
@@ -16,6 +25,8 @@ rpc_port = 8995
 web_port = 9001
 meta_dir = "/smoke/data/meta"
 log = { level = "info", log_dir = "/smoke/logs", file_name = "master.log" }
+[master.rocksdb]
+disable_wal = false
 [journal]
 hostname = "127.0.0.1"
 rpc_port = 8996
@@ -75,15 +86,28 @@ cli put /smoke/payload.bin /synthetic/payload.bin
 cli get /synthetic/payload.bin /smoke/read-before.bin
 cmp payload.bin read-before.bin
 echo 'PASS: CLI write and read, 4194304 bytes'
-kill -KILL "$worker_pid" "$master_pid"
-wait "$worker_pid" 2>/dev/null || true
-wait "$master_pid" 2>/dev/null || true
-start_services
+if [[ "$crash_target" == both || "$crash_target" == worker ]]; then
+    kill -KILL "$worker_pid"
+    wait "$worker_pid" 2>/dev/null || true
+fi
+if [[ "$crash_target" == both || "$crash_target" == master ]]; then
+    kill -KILL "$master_pid"
+    wait "$master_pid" 2>/dev/null || true
+fi
+if [[ "$crash_target" == both ]]; then
+    start_services
+elif [[ "$crash_target" == master ]]; then
+    /build/target/debug/curvine-server --service master --conf /smoke/cluster.toml >> master.out 2>&1 &
+    master_pid=$!
+else
+    /build/target/debug/curvine-server --service worker --conf /smoke/cluster.toml >> worker.out 2>&1 &
+    worker_pid=$!
+fi
 for attempt in $(seq 1 40); do
     if cli get /synthetic/payload.bin /smoke/read-after.bin >> recovery.out 2>&1; then
         cmp payload.bin read-after.bin
         sha256sum read-before.bin read-after.bin
-        echo 'PASS: simultaneous master/worker process-crash recovery'
+        echo "PASS: $crash_target process-crash recovery"
         exit 0
     fi
     sleep 2
