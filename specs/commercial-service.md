@@ -16,11 +16,13 @@ Separate the deployment decision from the AWS Marketplace pricing decision:
 | Supported dedicated deployment | Customer AWS account or isolated seller environment | Fixed-term service/support contract; select the appropriate listing model after validating delivery eligibility |
 | Managed Runix FS SaaS | Runix-operated private data plane | SaaS Contract for committed capacity, SaaS Subscription for usage, or Contract with pay-as-you-go |
 
-Initial recommendation: dedicated managed clusters with fixed contracted
-capacity and explicit hard limits, then optional metered overage. This reduces
-the initial shared-cluster isolation surface and makes cost exposure easier to
-control. It is a design recommendation, not a selected AWS listing or approved
-price. A BYOC deployment does not automatically qualify as SaaS: review the
+Owner decision on 2026-10-26: launch **SaaS Subscription** first, aligned with
+JuiceFS's usage-based purchase experience. The earlier Contract-first
+recommendation is superseded; do not treat the existing offline ContractGateway
+as a PAYG license check. See marketplace-reference-draft.md for implementation
+scope and tests. Private dedicated boundaries remain an isolation design, not
+a requirement for fixed-term pricing. No numeric price is approved.
+A BYOC deployment does not automatically qualify as SaaS: review the
 actual service ownership and Marketplace product requirements before listing.
 
 AWS uses **SaaS Subscriptions** to mean pay-as-you-go metering. Fixed recurring

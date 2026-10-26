@@ -9,7 +9,7 @@ below are future delivery scope, not features shipped by renaming the repository
 | 1: Reproducible engine | Runix Linux image/package with pinned source and toolchain | SBOM, notices, reproducible build, FUSE and cluster smoke, backup/restore |
 | 2: Dedicated service | Private AWS cluster deployment, IAM/S3 isolation, operator API | Unit tests for APIs, failure/retry tests, CSI lifecycle, cross-tenant denial |
 | 3: Shared Runix accounts | Organization roles, auth, service portal and auditing | SSO/session/CSRF tests; server-derived tenant; credential rotation |
-| 4: Subscription contracts | Product/license mapping, entitlements, capacity enforcement | Replay/order/restart tests; no duplicate grants; independent funds review |
+| 4: PAYG subscription lifecycle | Product/license/agreement mapping, active-license verification, capacity enforcement | Replay/order/restart tests; no duplicate provisioning; cancellation and cross-tenant denial |
 | 5: Marketplace metering | Usage truth, outbox, retries and reconciliation | Seller test account; UTC/rounding/partial-success tests; approved price/listing |
 | 6: Shared-cluster SaaS | Strong server/worker tenant authorization and enforced quotas | Adversarial isolation/resource exhaustion, durability and load gates |
 
@@ -17,6 +17,9 @@ Prefer independently reviewable commits with a narrow spec, implementation,
 unit tests and real runtime evidence for each backend change. Keep published
 benchmarks as upstream results until a Runix measurement records hardware,
 source SHA, workload, duration and raw artifacts.
+
+First launch is owner-selected SaaS Subscription, not SaaS Contract. Stages 4
+and 5 are both mandatory before charging; see marketplace-reference-draft.md.
 
 No collaborators are pending now: the owner chose to work alone. Future member
 grants require usernames and role choices. AWS seller identity, target region,

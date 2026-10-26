@@ -1,6 +1,6 @@
 # Runix FS Marketplace listing
 
-Status: non-public Staging product, observed 2026-10-23 (Asia/Shanghai).
+Status: non-public Staging product, re-observed 2026-10-26 (Asia/Shanghai).
 This is not a public offer, an approved price, or a delivered SaaS service.
 Resume the existing product; do not create another registration or listing.
 
@@ -71,9 +71,16 @@ static marketing page. Do not reuse the reference's terms or performance claims.
 
 | Model | Required implementation | Runix decision |
 | --- | --- | --- |
-| SaaS Subscription | Durable usage truth, hourly metering, license lifecycle, retries and settlement | Deferred; no validated usage pipeline |
-| SaaS Contract | Fixed purchased entitlement, enforced capacity, term/renewal, verified provisioner | Preferred candidate for dedicated service; not selected or price-approved |
-| Contract with PAYG | Both contract enforcement and metered overage | Deferred until both are verified |
+| SaaS Subscription | Durable usage truth, hourly metering, license lifecycle, retries and settlement | Owner-selected first launch; implementation and approved rate required |
+| SaaS Contract | Fixed purchased entitlement, enforced capacity, term/renewal, verified provisioner | Outside first launch; earlier recommendation superseded |
+| Contract with PAYG | Both contract enforcement and metered overage | Outside first launch |
+
+On 2026-10-26, resumed creation of this existing product (revision 2). The
+fulfillment step displayed SaaS and API-Based Agents & Tools; selected SaaS.
+Clicking Next with no fulfillment URL was rejected with a required valid URL
+error. No placeholder URL was entered. Cancelled the unsaved request rather
+than asserting a working registration service. The pricing-model step was not
+reached and no release or new change request was submitted by that attempt.
 
 [AWS pricing rules](https://docs.aws.amazon.com/marketplace/latest/userguide/saas-pricing-models.html)
 say the pricing model cannot change after publication to Limited. Do not lock

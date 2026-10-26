@@ -15,6 +15,30 @@ they do not establish filesystem or deployment behavior. Build a pinned Runix
 Linux artifact and record image digest, notices and SBOM before the cloud test.
 Do not start billable instances while waiting for a lengthy dependency build.
 
+The Linux amd64 engine build succeeded on 2026-10-26 with Rust 1.98.1, pinned
+tool-image digest recorded in marketplace-progress.md. Runtime tests are still
+required; compilation does not establish delivery readiness.
+
+## Prepared infrastructure generator (not deployed)
+
+`scripts/runix/marketplace_smoke_template.py` emits CloudFormation JSON only;
+it never creates resources. It models the approved inventory below: two private
+VPCs, four t3.large instances in Standard CPU-credit mode, 160 GB encrypted gp3,
+four SSM interface endpoints, two S3 gateway endpoints and three private buckets.
+It requires an explicit AMI, regional S3 prefix list and expiry tag. Tags are not
+an automatic teardown mechanism. There is no provisioner, artifact installation,
+volume formatting, cleanup watchdog or successful-readiness placeholder.
+
+Two EC2-only roles permit SSM session channels, each tenant's own synthetic-data
+prefix and read-only shared build artifacts. No cross-tenant object access or
+administrator policy is granted. Review the generated policies before any IAM
+creation. Prepare bounded deployment, teardown and resource-inventory verification
+before starting the paid window; a lint-valid template is not a deploy/run result.
+
+Validated locally on 2026-10-26: five template unit tests and cfn-lint 1.58.0
+with region us-east-1 passed. Combined adapter/template/migration suite: 30 tests
+passed. No cloud API or real billing call is made by these tests.
+
 ## Proposed private AWS smoke environment
 
 Region: us-east-1. Use synthetic test data only. Proposed maximum lifetime:

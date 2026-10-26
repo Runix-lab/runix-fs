@@ -2,6 +2,23 @@
 
 ## 2026-10-26, Asia/Shanghai
 
+- Owner explicitly selected SaaS Subscription as the sole first-release model,
+  following JuiceFS's service/purchase structure. Updated the listing, service,
+  roadmap and reference specification; Contract is no longer the launch candidate.
+  Prices, limits and legal terms are still not approved by that model decision.
+- Rechecked the actual seller UI: Runix Lab 712565469991, existing product
+  prod-xw6kihs3wveu2, Staging. Resumed revision 2, selected SaaS delivery and
+  attempted Next with the fulfillment URL empty. AWS rejected the missing URL.
+  Cancelled this unsaved request; no dummy URL, new product or review submission.
+- Linux amd64 engine build completed successfully with Rust 1.98.1 in the pinned
+  upstream CI tool image: cargo build --locked --jobs 2 -p curvine-server
+  -p curvine-cli -p curvine-fuse. Build took 20m55s; a dependency future-Rust
+  compatibility warning was emitted. This is compilation, not write/read,
+  restart, tenant-isolation, FUSE mounting or SaaS delivery verification.
+- Prepared a non-deploying private smoke-test CloudFormation generator and five
+  unit tests matching the approved inventory. Combined Python suite: 30 passed;
+  cfn-lint 1.58.0 us-east-1 and git diff --check passed. No paid resources created.
+
 - Owner approved the exact $5 private smoke-test budget previously proposed;
   no repeat budget approval is needed within that inventory, lifetime and scope.
   Actual cloud spending in this resumed work remains zero so far.
@@ -72,12 +89,14 @@
    request log before retrying any submitted update; never recreate the product.
 2. Reuse successful Save updates request `a830jbxslo7l54441i16iua6u` as evidence.
    Check latest product revision before any future update.
-3. Keep model/prices/terms/fulfillment empty until approved and deliverable.
+3. Implement the owner-selected Subscription model. Keep prices/terms and actual
+   AWS fulfillment configuration empty until approved and deliverable; never
+   substitute a Contract entitlement check for PAYG activation.
 4. Continue beyond the SDK adapter into real identity, durable org/license
    binding, private provisioning and lifecycle handling. Unit tests are not
    evidence of deployment, end-to-end authentication, quota or storage delivery.
-5. Prepare an explicit infrastructure budget and obtain approval before creating
-   any resources. Real purchase tests need a buyer identity and spending cap.
+5. The exact $5 short-lived private test budget is approved. Stay within its
+   inventory and lifetime; production and real purchase tests are not covered.
 
 No secret, runtime usage ledger, raw registration token or customer identity
 material belongs in this log or a Git commit.

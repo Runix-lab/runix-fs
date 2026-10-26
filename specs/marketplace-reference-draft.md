@@ -1,9 +1,54 @@
-# Runix FS Cloud Service: reference-shaped draft v1
+# Runix FS Cloud Service: Subscription-first launch specification
 
 Prepared 2026-10-26 after the owner's instruction to prepare a version following
 JuiceFS. This is Runix-authored copy and a commercial-model comparison, not a
 copy of another vendor's EULA, artwork, performance promises or service limits.
 Use the existing Staging product `prod-xw6kihs3wveu2`; do not create another.
+
+## Owner decision, 2026-10-26
+
+The owner explicitly selected **SaaS Subscription** for the first launch,
+following the JuiceFS commercial experience. This supersedes the earlier
+Contract-first recommendation. Do not develop or publish a second pricing model
+for this launch. This is an approved model decision, not approval of a numeric
+price, another vendor's terms, or unverified service limits.
+
+Sell a managed file-system/cache service, not an AMI license or an S3 plugin.
+Clients run beside customer workloads; the Runix-operated service manages the
+file-system service boundary. S3 is underlying object storage, not a runtime
+that executes Runix. Exact network connectivity and data-plane ownership must
+be validated before customer activation.
+
+### First-release scope and test targets
+
+1. Registration: real HTTPS POST endpoint, ResolveCustomer, expected seller and
+   product validation, current account/license/agreement identifiers, short-lived
+   handoff to authenticated organization binding. Test invalid/expired tokens,
+   cross-organization access, replay and simultaneous binds.
+2. Subscription lifecycle: verify active PAYG license/agreement, persist state,
+   process the account's actual event mechanism and reconcile authoritative AWS
+   state. Test activation, cancellation, stale/duplicate/out-of-order events and
+   restart recovery. The existing ContractGateway is not the PAYG activation gate.
+3. Delivery: idempotent private provisioning with durable operation state,
+   tenant-scoped IAM/storage, failure rollback and connection instructions. Test
+   real writes, reads and restart recovery, unpurchased/cross-tenant denial and
+   separately enforced capacity limits. No public engine RPC or management UI.
+4. Usage: one storage-usage dimension with a durable per-license ledger and
+   transactional outbox outside the I/O path. Test UTC boundaries, exact units,
+   repeated samples, concurrent aggregation, crash recovery, partial AWS failure,
+   retry and reconciliation without duplicate charges. Preserve fractional usage
+   rather than rounding every sample up. Do not emit paid records until approved
+   unit conversion and rate are configured.
+5. Cancellation: stop new billable usage at the verified lifecycle boundary,
+   settle eligible outstanding usage within the applicable AWS window, expose
+   subscription state and preserve customer data under approved retention/export
+   rules. Resolve the documented AWS window discrepancy before paid testing.
+6. Buyer acceptance: Marketplace -> Runix -> active organization -> private
+   file-system connection; repeat callback without duplicate resources; cancel
+   and replay. Paid purchase tests require their own approved spending cap.
+
+Each backend interface needs authorization, validation, failure and replay tests.
+Use narrow implementation commits; offline tests alone do not satisfy delivery.
 
 ## Title
 
@@ -63,9 +108,10 @@ billing without a fixed end date, cancellation at any time, possible additional
 AWS infrastructure charges, and its own no-refund policy. It also advertises
 10 PiB, 100M inodes and 1000 clients. These are reference observations only.
 
-For a JuiceFS-shaped experience, Runix's **candidate** is SaaS Subscription
-with one clearly defined storage-usage dimension. This differs from the earlier
-Contract-first recommendation and is not yet a selected or published model.
+For a JuiceFS-shaped experience, Runix's **selected launch model** is SaaS
+Subscription with one clearly defined storage-usage dimension. This supersedes
+the earlier Contract-first recommendation; it is not yet configured or published
+in AWS. Contract and Contract with PAYG are outside this first-release scope.
 The reference's $0.02 figure may be used in cost comparison; no Runix charge
 has been approved or made effective by this document.
 
