@@ -2,6 +2,13 @@
 
 ## 2026-10-26, Asia/Shanghai
 
+- Owner delegated initial price-setting using JuiceFS as the reference, rather
+  than supplying a rate. Prepared marketplace-launch-commercial-draft.md:
+  $0.00002740/GiB-hour (about $0.02/GiB at 730 hours), integer/remainder rules,
+  explicit infrastructure cost gap and proposed policies. This supersedes
+  asking the owner for a price number. Legal terms and a proposed $175/month
+  production ceiling remain unapproved; no ongoing paid resource was created.
+
 - Fixed RocksInodeStore overriding an explicit metadata WAL setting. Defaults
   are unchanged; smoke configuration now explicitly enables WAL. All six
   inode-store tests and rebuilt-server 4 MiB master-only, worker-only and both

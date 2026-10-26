@@ -11,7 +11,10 @@ The owner explicitly selected **SaaS Subscription** for the first launch,
 following the JuiceFS commercial experience. This supersedes the earlier
 Contract-first recommendation. Do not develop or publish a second pricing model
 for this launch. This is an approved model decision, not approval of a numeric
-price, another vendor's terms, or unverified service limits.
+price, another vendor's terms, or unverified service limits. Subsequently the
+owner delegated numeric price-setting using JuiceFS as the reference; see
+marketplace-launch-commercial-draft.md for the selected introductory hourly
+rate and its cost/delivery gates. No competitor legal terms are adopted.
 
 Sell a managed file-system/cache service, not an AMI license or an S3 plugin.
 Clients run beside customer workloads; the Runix-operated service manages the
@@ -113,7 +116,9 @@ Subscription with one clearly defined storage-usage dimension. This supersedes
 the earlier Contract-first recommendation; it is not yet configured or published
 in AWS. Contract and Contract with PAYG are outside this first-release scope.
 The reference's $0.02 figure may be used in cost comparison; no Runix charge
-has been approved or made effective by this document.
+has been made effective by this document. The subsequent delegated Runix rate
+is recorded in marketplace-launch-commercial-draft.md, not in this historical
+reference observation.
 
 Before configuring any rate, resolve these concrete implementation choices:
 

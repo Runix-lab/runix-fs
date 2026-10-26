@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="439" viewBox="0 0 780 439" role="img" aria-labelledby="title desc">
+  <title id="title">Runix FS Cloud Service — product overview draft</title>
+  <desc id="desc">S3-backed distributed file system and cache for AI datasets, model files and Agent workspaces. Commercial onboarding is in preparation. Apache-2.0 engine derived from Curvine.</desc>
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5b8cff"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#172744"/>
+      <stop offset="1" stop-color="#101d33"/>
+    </linearGradient>
+  </defs>
+  <rect width="780" height="439" fill="#0a1220"/>
+  <path d="M500 0V439M560 0V439M620 0V439M680 0V439M740 0V439M470 60H780M470 120H780M470 180H780M470 240H780M470 300H780M470 360H780" stroke="#18253a" stroke-width="1"/>
+  <g transform="translate(33 28)">
+    <circle cx="32" cy="32" r="20.5" fill="none" stroke="url(#brand)" stroke-width="2.6" opacity=".55"/>
+    <ellipse cx="32" cy="32" rx="20.5" ry="8" fill="none" stroke="url(#brand)" stroke-width="3.6" transform="rotate(-25 32 32)"/>
+    <ellipse cx="32" cy="32" rx="20.5" ry="8" fill="none" stroke="url(#brand)" stroke-width="3.6" transform="rotate(65 32 32)"/>
+    <circle cx="32" cy="32" r="5.5" fill="url(#brand)"/>
+    <circle cx="46.5" cy="17.5" r="2.8" fill="#22d3ee"/>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="108" y="66" font-size="18" font-weight="700" fill="#e9f2ff">RUNIX LAB</text>
+    <rect x="580" y="36" width="158" height="29" rx="14" fill="#132a3c" stroke="#2a5267"/>
+    <text x="659" y="55" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1.2" fill="#9be9f1">PRODUCT PREVIEW</text>
+    <text x="44" y="142" font-size="35" font-weight="700" fill="#f2f6ff">Runix FS</text>
+    <text x="44" y="179" font-size="27" fill="#c4d4f0">Cloud Service</text>
+    <text x="44" y="220" font-size="17" fill="#9fbbdf">S3-backed file system + cache</text>
+    <g font-size="14" fill="#dbe6f7">
+      <circle cx="49" cy="260" r="3" fill="#22d3ee"/><text x="64" y="265">AI datasets</text>
+      <circle cx="49" cy="291" r="3" fill="#22d3ee"/><text x="64" y="296">Model files</text>
+      <circle cx="49" cy="322" r="3" fill="#22d3ee"/><text x="64" y="327">Agent workspaces</text>
+    </g>
+    <g transform="translate(450 105)">
+      <rect x="17" y="20" width="245" height="225" rx="20" fill="url(#panel)" stroke="#2a4563"/>
+      <path d="M42 64h65l16 16h113v119H42Z" fill="#173e59" stroke="#54b4df" stroke-width="2"/>
+      <path d="M42 94h194" stroke="#54b4df" stroke-width="2"/>
+      <rect x="66" y="115" width="145" height="13" rx="6" fill="#3b78a8"/>
+      <rect x="66" y="142" width="115" height="10" rx="5" fill="#2e587b"/>
+      <rect x="66" y="165" width="130" height="10" rx="5" fill="#2e587b"/>
+      <text x="140" y="226" text-anchor="middle" font-size="12" fill="#a9c5e0">Apache-2.0 · Curvine-derived engine</text>
+    </g>
+    <path d="M44 369H736" stroke="#27374b"/>
+    <text x="44" y="397" font-size="12" fill="#b7c9df">Commercial onboarding in preparation</text>
+    <text x="736" y="397" text-anchor="end" font-size="12" fill="#75d9eb">runixcloud.io/fs</text>
+  </g>
+</svg>

@@ -21,7 +21,9 @@ JuiceFS's usage-based purchase experience. The earlier Contract-first
 recommendation is superseded; do not treat the existing offline ContractGateway
 as a PAYG license check. See marketplace-reference-draft.md for implementation
 scope and tests. Private dedicated boundaries remain an isolation design, not
-a requirement for fixed-term pricing. No numeric price is approved.
+a requirement for fixed-term pricing. The owner subsequently delegated
+reference-based price-setting; marketplace-launch-commercial-draft.md records
+the exact proposed introductory rate. It is not a live or validated paid offer.
 A BYOC deployment does not automatically qualify as SaaS: review the
 actual service ownership and Marketplace product requirements before listing.
 
