@@ -10,6 +10,12 @@
   prod-xw6kihs3wveu2, Staging. Resumed revision 2, selected SaaS delivery and
   attempted Next with the fulfillment URL empty. AWS rejected the missing URL.
   Cancelled this unsaved request; no dummy URL, new product or review submission.
+- Subsequently submitted only the existing product's short-description update
+  to describe the planned usage-based SaaS Subscription. AWS confirmed request
+  b0kylklya1tnhz8qs08bosc4k Succeeded, 2026-10-26 11:17 AM GMT+8. Verified its
+  detail page including the exact summary, unchanged long description, logo,
+  highlights and support. Product remains Staging, not under public-launch
+  review. The earlier discarded rich-text attempt was not saved.
 - Linux amd64 engine build completed successfully with Rust 1.98.1 in the pinned
   upstream CI tool image: cargo build --locked --jobs 2 -p curvine-server
   -p curvine-cli -p curvine-fuse. Build took 20m55s; a dependency future-Rust

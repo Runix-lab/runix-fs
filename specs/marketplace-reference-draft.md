@@ -56,9 +56,9 @@ Runix FS Cloud Service
 
 ## Short description
 
-An S3-backed distributed file system and cache for AI datasets, model files,
-and Agent workspaces. Runix FS combines the Apache-2.0 Curvine engine with a
-commercial service offering that is currently in preparation.
+S3-backed distributed file system and cache for AI datasets, model files, and
+Agent workspaces. Planned usage-based SaaS Subscription; commercial onboarding
+is in preparation.
 
 ## Overview
 

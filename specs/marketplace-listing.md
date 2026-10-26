@@ -28,8 +28,13 @@ Resume the existing product; do not create another registration or listing.
 Short description:
 
 > S3-backed distributed file system and cache for AI datasets, model files, and
-> Agent workspaces. Commercial service in preparation; deployment scope and
-> pricing require an agreed service plan.
+> Agent workspaces. Planned usage-based SaaS Subscription; commercial onboarding
+> is in preparation.
+
+This summary update succeeded on 2026-10-26 at 11:17 AM GMT+8, request
+`b0kylklya1tnhz8qs08bosc4k`. The request detail confirms the new short description
+and preserved long description, logo, highlights and support information. This
+is a Staging content update, not pricing-model configuration or launch approval.
 
 The detailed draft describes the Apache-2.0 Curvine derivative, distinguishes
 the proposed managed service from the open-source engine, and explicitly states
