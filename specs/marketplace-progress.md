@@ -2,6 +2,17 @@
 
 ## 2026-10-26, Asia/Shanghai
 
+- Completed a first public gateway-listing survey: LiteLLM, Portkey,
+  TrueFoundry, Kong Konnect Plus, Vercel AI Gateway and Tyk. Primary-source
+  links, displayed prices, actual billing models and cautions are in
+  marketplace-gateway-research.md. No competitor was purchased and no gateway
+  product was created. FS's existing product remains separate.
+- Refreshed AWS SaaS guidelines/onboarding. A contact-us/manual provisioning
+  flow is permitted only with actual registration-token resolution, a stated
+  turnaround and notification; it does not allow a static page to impersonate
+  delivery. A public-only-private-offer restriction in the current guideline
+  conflicts with some observed competitor copy; do not imitate it blindly.
+
 - Owner explicitly selected SaaS Subscription as the sole first-release model,
   following JuiceFS's service/purchase structure. Updated the listing, service,
   roadmap and reference specification; Contract is no longer the launch candidate.
