@@ -2,6 +2,15 @@
 
 ## 2026-10-26, Asia/Shanghai
 
+- Executed the compiled engine, not a mock: 4 MiB CLI write/read and byte
+  comparison passed in a network-disabled Linux container. Immediate master
+  plus worker process-crash recovery failed with FileNotFound after 40 attempts.
+  A second requested-WAL experiment also failed; the actual inode store forces
+  WAL off despite the parsed setting. No engine fix or recovery success is
+  claimed. Reproduction, binary/payload hashes and source findings are in
+  marketplace-local-smoke.md. Runtime data was not committed. Cloud budget is
+  unspent and the test container was removed after each failed run.
+
 - Completed a first public gateway-listing survey: LiteLLM, Portkey,
   TrueFoundry, Kong Konnect Plus, Vercel AI Gateway and Tyk. Primary-source
   links, displayed prices, actual billing models and cautions are in

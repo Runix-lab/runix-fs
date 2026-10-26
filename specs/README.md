@@ -13,6 +13,7 @@ implementation and verification evidence.
 | [Commercial service](commercial-service.md) | AWS delivery, identity, entitlement and metering design |
 | [Marketplace listing](marketplace-listing.md) | Seller evidence, draft identity, publication gates and outstanding commercial decisions |
 | [Gateway research](marketplace-gateway-research.md) | Verified AI/API gateway listings and future product packaging, separate from FS launch |
+| [Local engine smoke](marketplace-local-smoke.md) | Actual write/read evidence, failed crash recovery and reproduction |
 | [Website](website-integration.md) | Public website and future authenticated console integration |
 | [Roadmap](roadmap.md) | Dependency order and acceptance gates for subsequent development |
 | [Verification](verification.md) | Actual migration tests, CI results and publication boundaries |
