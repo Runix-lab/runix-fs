@@ -58,6 +58,26 @@ requirement. Preserve the original source; do not use competitor artwork.
 Existing public sales contact: sales@runixcloud.io. Paid support scope still
 requires approval; publishing an address does not verify mailbox operations.
 
+### Pending local materials, not saved in AWS
+
+- Original opaque 780x439 gallery PNG:
+  `images/marketplace/runix-fs-overview-780x439.png`. Source/provenance and render
+  instructions are in that directory's README. It is product-preview artwork,
+  explicitly stating commercial onboarding is in preparation, not a screenshot
+  of a working service. The existing saved logo remains unchanged.
+- Learning resource name: `Runix FS product overview (early access)`;
+  URL: `https://runixcloud.io/fs`.
+- Learning resource name: `Runix FS documentation and quick start`;
+  URL: `https://runixcloud.io/docs/fs`.
+
+The 2026-10-26 gallery chooser did not attach a file. Submitting just the two
+resource links returned **Session expired**, before AWS could start a ChangeSet.
+No new request ID was obtained. The current browser form is unsaved; after
+session recovery check the real revision/request log before applying this list.
+The owner declined ongoing production spending and requested local/draft work
+only. No price, fulfillment, Limited visibility or public review is configured
+by these pending materials.
+
 ## Reference product observations
 
 [JuiceFS listing](https://aws.amazon.com/marketplace/pp/prodview-beu22bg5b24ww)

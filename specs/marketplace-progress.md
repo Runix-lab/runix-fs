@@ -2,12 +2,31 @@
 
 ## 2026-10-26, Asia/Shanghai
 
+- Owner declined the proposed $175/month production allocation and narrowed
+  immediate work to local verification and drafts. No AWS resource was created,
+  no purchase was made, and no cloud smoke test was started. Do not treat the
+  earlier $5 short-test approval as production authorization.
+- Local original gallery artwork and logo are committed in df0f624. Uploading
+  the gallery through the extension file chooser timed out; native selection
+  did not attach a file. The empty gallery asset was removed from the form.
+  The gallery image is **local only**, not saved to Marketplace.
+- Added the verified public overview and documentation URLs to the existing
+  revision-3 update form, then clicked Submit. AWS returned **Session expired:
+  We can't start ChangeSet**. The Sign in link opened the AWS login page; no
+  new request ID or successful save was obtained. Do not report these resource
+  links as saved, or blindly resubmit against a stale revision after login.
+  The existing tab retains the unsaved form for recovery. No legal terms,
+  price, fulfillment endpoint or visibility were submitted.
+- Re-ran all 33 Python tests successfully. Earlier six Rust inode-store tests
+  and three real process-crash smoke runs remain separately scoped evidence.
+  No new backend interface was introduced in this continuation.
+
 - Owner delegated initial price-setting using JuiceFS as the reference, rather
   than supplying a rate. Prepared marketplace-launch-commercial-draft.md:
   $0.00002740/GiB-hour (about $0.02/GiB at 730 hours), integer/remainder rules,
   explicit infrastructure cost gap and proposed policies. This supersedes
-  asking the owner for a price number. Legal terms and a proposed $175/month
-  production ceiling remain unapproved; no ongoing paid resource was created.
+  asking the owner for a price number. Legal terms remain unapproved; the
+  subsequently proposed $175/month production ceiling was declined above.
 
 - Fixed RocksInodeStore overriding an explicit metadata WAL setting. Defaults
   are unchanged; smoke configuration now explicitly enables WAL. All six
@@ -139,8 +158,9 @@
 4. Continue beyond the SDK adapter into real identity, durable org/license
    binding, private provisioning and lifecycle handling. Unit tests are not
    evidence of deployment, end-to-end authentication, quota or storage delivery.
-5. The exact $5 short-lived private test budget is approved. Stay within its
-   inventory and lifetime; production and real purchase tests are not covered.
+5. Current instruction is local and draft work only. The previous exact $5
+   short-lived cloud test approval does not authorize production or purchases;
+   do not start it while the narrowed immediate scope remains in force.
 
 No secret, runtime usage ledger, raw registration token or customer identity
 material belongs in this log or a Git commit.

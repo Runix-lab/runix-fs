@@ -77,11 +77,13 @@ launch, either approve the seller-funded production allocation or establish a
 validated lower-cost delivery boundary. Do not invent a minimum fee to close
 the gap without publishing and authorizing it.
 
-Proposed initial production spending ceiling for later review: $175/month for
-one bounded environment, excluding tax, paid Marketplace buyer testing and
-additional tenants. This is **not approved**, is not a hard AWS spending cap,
-and does not authorize creating resources. The previously approved $5 covers
-only the named two-hour smoke test. No production resources were created.
+The owner explicitly **declined** the proposed $175/month production ceiling
+and instructed: "不批准，先完成本地和草稿". Continue local verification and
+Staging preparation only; do not create ongoing paid resources or start the
+cloud smoke test under this narrowed immediate scope. The earlier $5 approval
+covered only the named two-hour test, never production. No cloud resources were
+created by this work. Any later production plan requires a new decision; do not
+keep presenting the declined ceiling as pending approval.
 
 ## Proposed policy text for owner/legal review (not effective)
 
