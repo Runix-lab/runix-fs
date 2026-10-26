@@ -6,6 +6,7 @@ An AI filesystem maintained by **Runix Lab**, based on the Apache-2.0
 [Product website](https://runixcloud.io/fs) ·
 [Quick start](https://runixcloud.io/docs/fs) ·
 [Development specifications](specs/README.md) ·
+[快速学习(中文)](QUICK-LEARN.zh-CN.md) ·
 [Original Curvine README](README.upstream.md)
 
 Runix FS provides the starting point for AI Agent workspaces, dataset access
@@ -22,7 +23,9 @@ cd runix-fs
 git remote add upstream git@github.com:CurvineIO/curvine.git
 ```
 
-Read [AGENTS.md](AGENTS.md) and [specs/README.md](specs/README.md) first.
+Read [AGENTS.md](AGENTS.md) and [specs/README.md](specs/README.md) first. New to the
+codebase? [QUICK-LEARN.zh-CN.md](QUICK-LEARN.zh-CN.md) covers the problem, the read/write and
+caching paths with source pointers, and the gaps before production in one page (Chinese).
 Use the pinned Rust channel in `rust-toolchain.toml` and the upstream Linux
 build environment. See the [architecture and test gates](specs/architecture.md)
 for dependencies and explicit cluster/FUSE/CSI checks. The internal crate names,
@@ -53,4 +56,4 @@ The original English README is preserved as `README.upstream.md`. Upstream
 benchmark claims are attributed to upstream and have not been remeasured here.
 
 Modification notice: Runix Lab replaced the product entry README on 2026-10-21
-and preserved the original version separately.
+and preserved the original version separately; the quick-learn link was added on 2026-10-22.
