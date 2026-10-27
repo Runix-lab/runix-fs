@@ -1,5 +1,24 @@
 # Marketplace progress log
 
+## 2026-10-27, Asia/Shanghai
+
+- Continued the full launch objective with a durable PAYG metering outbox,
+  specified before implementation in marketplace-metering.md. Real local
+  SQLite transactions, separate-connection concurrency, subprocess exit and
+  post-AWS/pre-local-commit failure are covered. Twenty-six new tests and all
+  59 combined Python tests passed without real Marketplace billing. SDK
+  botocore 1.43.118 and current AWS docs were checked for fields, limits and
+  DuplicateRecord meaning. No organization API, license verifier or collector
+  is claimed. Independent financial review and live integration remain gates.
+- Updated existing Runix CI dependency installation to include the pinned
+  Marketplace SDK required by these tests. Only local checks were run; no
+  remote CI conclusion is claimed. Added an ignored private runtime directory;
+  no usage DB, token or real customer record was committed.
+- Last browser check confirmed explicit Session expired. The previous goal
+  turn produced executable code and 25 passing new tests: progress, not a
+  launch or live AWS wait. Product remains the existing Staging listing; no
+  new saved image, price, fulfillment or release request is claimed.
+
 ## 2026-10-26, Asia/Shanghai
 
 - Owner declined the proposed $175/month production allocation and narrowed

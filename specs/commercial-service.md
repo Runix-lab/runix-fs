@@ -1,6 +1,6 @@
 # AWS commercial service design
 
-Status: design contract plus an offline-tested AWS adapter. A non-public Staging
+Status: design plus offline-tested AWS adapters and metering outbox. A non-public Staging
 product was created on 2026-10-23; see marketplace-listing.md. No commercial HTTP
 API, paid cluster or billing integration is deployed. Baseline official sources
 were retrieved on 2026-10-21; listing notes record the 2026-10-23 refresh.
@@ -173,6 +173,25 @@ is not an issued AWS invoice. Do not invent final customer amounts.
 All new backend endpoints require unit tests. Money/entitlement/quota code
 requires an independent adversarial review and seller test-account integration
 before any paid activation. Publication and real charges require owner approval.
+
+## Local metering implementation, 2026-10-27
+
+`scripts/runix/marketplace_metering.py` persists sealed integer usage and
+immutable license/hour payloads, binds buyer/agreement identity across hours,
+leases batches atomically, preserves attempt/response audit, and dispatches only
+Concurrent Agreements fields through a caller-supplied SDK client. It checks
+seller STS identity and handles partial results, retryable errors, permanent
+rejections and expiration. DuplicateRecord is quarantined because AWS documents
+it as conflicting quantities. See marketplace-metering.md for the full input
+contract and 26 local tests.
+
+This does not implement logical byte-time collection, fractional remainders,
+PAYG license verification, organization authentication, lifecycle events or
+provisioning. A trusted future worker must supply validated sealed usage and
+shorten final deadlines on cancellation. No HTTP endpoint, automatic worker,
+live metering invocation or AWS deployment is introduced. Missing upstream
+controls and independent review remain release gates. An accepted API record
+is not a final invoice.
 
 ## Official references
 
