@@ -13,7 +13,7 @@ implementation and verification evidence.
 | [Commercial service](commercial-service.md) | AWS delivery, identity, entitlement and metering design |
 | [Marketplace listing](marketplace-listing.md) | Seller evidence, draft identity, publication gates and outstanding commercial decisions |
 | [Initial commercial draft](marketplace-launch-commercial-draft.md) | Delegated reference-based pricing, exact units, cost gap and proposed policies |
-| [Metering outbox](marketplace-metering.md) | Durable sealed-record dispatch, leases, SDK response handling and local verification scope |
+| [Metering and storage ledger](marketplace-metering.md) | Exact byte-time conversion, durable sealed-record dispatch, leases, SDK responses and verification limits |
 | [Gateway research](marketplace-gateway-research.md) | Verified AI/API gateway listings and future product packaging, separate from FS launch |
 | [Local engine smoke](marketplace-local-smoke.md) | Write/read, historical crash failure, WAL fix, local S3-compatible write-through and recovery evidence |
 | [Website](website-integration.md) | Public website and future authenticated console integration |

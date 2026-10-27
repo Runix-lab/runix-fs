@@ -2,6 +2,18 @@
 
 ## 2026-10-27, Asia/Shanghai
 
+- Implemented exact GiB-hour interval accounting in marketplace_storage_usage.py
+  with immutable source-event replay, gap/order rejection, persistent per-license
+  remainders, final fractional waiver and atomic hourly outbox sealing. Nineteen
+  new tests passed, including independent Fraction comparison, concurrent
+  append/seal, subprocess exit and rollback after a partial multi-hour enqueue.
+  Combined suite: 80 passed; provenance and whitespace checks passed. No live
+  collector, organization authorization or subscription cancellation is claimed.
+- The prior goal turn was concrete progress (commits 03d9de2 and 174b7d0), not a
+  verified live AWS wait. Rechecked the retained product form: Session expired
+  remains visible. No saved draft/price/image update, buyer URL or public
+  visibility was obtained in this continuation. The explicit declined
+  production budget remains in force; no paid resource was created.
 - Executed real local S3-compatible integration against a temporary MinIO
   container, with the rebuilt engine and a separate official Python SDK
   container. Seed/read, write-through verified directly by S3 GetObject, and

@@ -101,13 +101,31 @@ class MeteringOutbox:
 
     @contextmanager
     def transaction(self):
-        self.db.execute("BEGIN IMMEDIATE")
+        nested = self.db.in_transaction
+        savepoint = "metering_" + uuid.uuid4().hex
+        self.db.execute("SAVEPOINT " + savepoint if nested else "BEGIN IMMEDIATE")
         try:
             yield
-            self.db.execute("COMMIT")
+            self.db.execute("RELEASE " + savepoint if nested else "COMMIT")
         except BaseException:
-            self.db.execute("ROLLBACK")
+            if nested:
+                self.db.execute("ROLLBACK TO " + savepoint)
+                self.db.execute("RELEASE " + savepoint)
+            else:
+                self.db.execute("ROLLBACK")
             raise
+
+    def bind_purchase(self, purchase):
+        """Internal transaction helper; identity is verified by the upstream caller."""
+        if not self.db.in_transaction:
+            raise RuntimeError("Purchase binding requires a write transaction")
+        validate_purchase(purchase, self.product_code)
+        self.db.execute("INSERT OR IGNORE INTO licenses VALUES(?,?,?)",
+                        (purchase.license_arn, purchase.account_id, purchase.agreement_id))
+        identity = self.db.execute("SELECT account,agreement FROM licenses WHERE license=?",
+                                   (purchase.license_arn,)).fetchone()
+        if tuple(identity) != (purchase.account_id, purchase.agreement_id):
+            raise MeteringConflict("License identity cannot be rebound")
 
     def close(self):
         self.db.close()
@@ -140,12 +158,7 @@ class MeteringOutbox:
         if len(payload.encode("utf-8")) > 32000:
             raise ValueError("Record exceeds the bounded request payload size")
         with self.transaction():
-            self.db.execute("INSERT OR IGNORE INTO licenses VALUES(?,?,?)",
-                            (purchase.license_arn, purchase.account_id, purchase.agreement_id))
-            identity = self.db.execute("SELECT account,agreement FROM licenses WHERE license=?",
-                                       (purchase.license_arn,)).fetchone()
-            if tuple(identity) != (purchase.account_id, purchase.agreement_id):
-                raise MeteringConflict("License identity cannot be rebound")
+            self.bind_purchase(purchase)
             self.db.execute("""INSERT OR IGNORE INTO usage
                 (license,dimension,hour,agreement,payload,deadline) VALUES(?,?,?,?,?,?)""",
                 (purchase.license_arn, dimension, stamp // 3600, purchase.agreement_id, payload, deadline))

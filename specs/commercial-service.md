@@ -185,9 +185,16 @@ rejections and expiration. DuplicateRecord is quarantined because AWS documents
 it as conflicting quantities. See marketplace-metering.md for the full input
 contract and 26 local tests.
 
-This does not implement logical byte-time collection, fractional remainders,
-PAYG license verification, organization authentication, lifecycle events or
-provisioning. A trusted future worker must supply validated sealed usage and
+The interval ledger in `scripts/runix/marketplace_storage_usage.py` now converts
+trusted completed byte-time intervals to integer GiB-hours and persists exact
+fractional remainders. Nineteen local tests verify rounding, cancellation's
+final partial accounting interval, concurrency, replay and crash recovery; the
+combined suite has 80 passing tests. This is a calculation/persistence primitive,
+not an authoritative live storage collector or real lifecycle cancellation.
+
+These modules do not implement trusted logical byte-time collection, PAYG
+license verification, organization authentication, lifecycle events or
+provisioning. A trusted future worker must supply validated observed usage and
 shorten final deadlines on cancellation. No HTTP endpoint, automatic worker,
 live metering invocation or AWS deployment is introduced. Missing upstream
 controls and independent review remain release gates. An accepted API record

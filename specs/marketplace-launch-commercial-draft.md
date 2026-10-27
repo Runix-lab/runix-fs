@@ -31,6 +31,10 @@ service time in UTC, divided by 2^30 * 3600 to obtain GiB-hours. Exclude cache
 copies, replication, metadata, sparse holes and unused provisioned capacity.
 This measurement is a required implementation contract, not an existing metric.
 Do not start billing while a subscription is waiting for usable provisioning.
+The local storage interval ledger now implements exact conversion and remainder
+accounting from trusted completed intervals, but actual engine measurement and
+its provenance remain unimplemented. Synthetic tests do not validate a live
+logical-byte metric, sparse-hole exclusion or buyer isolation.
 
 Persist sub-unit remainders per license. Submit integer quantities only after
 durable hourly sealing; never round every sample up. At final settlement,
