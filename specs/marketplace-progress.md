@@ -2,6 +2,16 @@
 
 ## 2026-10-27, Asia/Shanghai
 
+- Executed real local S3-compatible integration against a temporary MinIO
+  container, with the rebuilt engine and a separate official Python SDK
+  container. Seed/read, write-through verified directly by S3 GetObject, and
+  both-object retrieval after simultaneous Master/Worker SIGKILL/restart passed
+  byte comparisons. Hashes, pinned images, failures and reproduction are in
+  marketplace-local-smoke.md. This is not actual AWS S3, FUSE or SaaS delivery.
+- Verified internal Docker network=true, no engine/store host port bindings,
+  and no remaining test containers/networks after execution. No pre-existing
+  local service was stopped. Added two failure-cleanup tests; combined suite
+  now 61 passed. No AWS resources, buyer purchases or billing calls occurred.
 - Continued the full launch objective with a durable PAYG metering outbox,
   specified before implementation in marketplace-metering.md. Real local
   SQLite transactions, separate-connection concurrency, subprocess exit and

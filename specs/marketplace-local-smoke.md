@@ -3,7 +3,9 @@
 Date: 2026-10-26, Asia/Shanghai. Baseline result: **write/read passed;
 process-crash recovery failed**. After the configuration repair below,
 WAL-enabled master-only, worker-only and simultaneous process-crash recovery
-passed. This is not a production, S3, FUSE, HA or Marketplace test.
+passed. Those original runs were not production, S3, FUSE, HA or Marketplace
+tests. A later local MinIO/S3-compatible integration passed below; real AWS S3
+and the other release gates remain unverified.
 No cloud resources or Marketplace purchases were created for this test.
 
 ## Environment and provenance
@@ -122,3 +124,84 @@ FS release still requires S3 persistence/recovery, FUSE, three-master failover,
 backup/restore and the unbuilt commercial registration, organization
 authorization, PAYG lifecycle and usage pipeline. No power-loss, RPO or SLA
 claim follows from process-kill tests.
+
+## Local S3 compatibility gate
+
+Use a newly created internal Docker network, a temporary MinIO container from
+the already installed official image digest, and the rebuilt engine. Publish
+no ports and use no existing buckets/volumes/customer data. Use independent
+boto3 calls against the temporary object store to seed a 4 MiB object and check
+write-through output. Verify cache-mode read, read-write upload, and retrieval
+after simultaneous master/worker SIGKILL/restart without formatting. Check all
+payloads byte for byte. Temporary credentials are fixture-only, stored outside
+Git, and never printed. Cleanup only containers/network created by this test.
+
+This is an S3-compatible local integration, not AWS S3, account isolation,
+fs_mode asynchronous persistence, FUSE, HA, backup/restore or public delivery.
+Record actual outcomes and source/binary hashes after execution; do not count
+the plan or a running container as a passing test.
+
+### Actual result, 2026-10-27
+
+**Passed**, using the real compiled engine and independent boto3 object-store
+calls, not a mocked file service:
+
+1. SDK created a new local synthetic bucket and 4,194,304-byte source object.
+2. CLI mounted the bucket in `cache_mode`, `read_write`, with UFS verification,
+   read the object and compared every byte to the independent source.
+3. CLI uploaded a separate 4,194,304-byte object through the mount.
+4. Immediately SIGKILLed Master and Worker, restarted both without formatting,
+   and downloaded both source/upload paths. Each matched its original bytes.
+5. An independent SDK GetObject read the uploaded object directly from MinIO
+   and matched it against the original upload, proving actual write-through.
+6. Docker inspection during the test confirmed network Internal=true and both
+   engine/store HostConfig.PortBindings={}. After completion, container and
+   network inventories showed no remaining runix-s3-smoke resources. Existing
+   unrelated containers were not stopped. No AWS resource or bill was created.
+
+Payload evidence:
+
+| Payload group | Bytes per file | SHA-256 |
+| --- | --- | --- |
+| Seed, read-before, read-after | 4,194,304 | `7bda1bd794a4a828876af8f1935d4bdf25a337e89a4a6a3535b0bc16c0468f7c` |
+| Upload, direct-S3-read, upload-after | 4,194,304 | `b485e7aace49941bcdbc469cc8f1dc3a222dcc6aa5c9f00c469192601ca8afd4` |
+
+Actual server SHA-256:
+`707497ccfd450d5c7f6c252230819d0c4a9297328d74207b44f2bc2f4c640914`.
+CLI SHA-256:
+`f1f517005f18b5157c017d1759b0c5448a1efac9da3babc12a1f5b9f3f50dd12`.
+This reuses the earlier WAL-repaired build; it is not a rebuild of the latest
+documentation/outbox commit. Engine behavior was not changed during this run.
+
+Local raw evidence directory (not committed):
+`/var/folders/2x/cb5tfqrd52x2ddhb39yfn35w0000gn/T/runix-s3-smoke-m715epnl/`.
+It contains payloads, evidence.json, binary-hashes.txt and private logs; do not
+upload mount configuration or logs containing even fixture credentials.
+
+The first attempt failed before storage operations because the tool image's
+Python could not load the current SDK. The fixture now runs in a separate
+official Python container. The second failed at CLI argument validation:
+`--read-verify-ufs` is a boolean flag in this build and must not be followed by
+`true`. Both failures were retained and their resources cleaned; neither was
+counted as storage success. The third run passed all steps above.
+
+Reproduce with already installed images/build volume and the existing SDK:
+
+```sh
+/tmp/runix-marketplace-venv/bin/python scripts/runix/local_s3_smoke.py \
+  --sdk-dir /tmp/runix-marketplace-venv/lib/python3.11/site-packages
+```
+
+The host orchestrator does not pull images or install packages. The separate
+fixture requires Python >=3.10. SDK dependencies are mounted read-only.
+
+- MinIO image: `minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e`.
+- SDK image, downloaded from official Docker Hub library/python:
+  `python@sha256:5b8b1421ccb6a525860a77863c049eab5847076cda34e030c75a80c58faf3f3c`.
+- Engine tool image remains the earlier pinned Curvine CI digest.
+
+Two additional fault tests verify failed Docker starts/engine runs clean up only
+their unique invocation resources, delete the temporary credential file and
+preserve unrelated service/network names. Combined Python suite: 61 passed.
+Shell syntax, Python compilation and provenance checks also pass. These do not
+replace the real integration run or prove AWS account-level tenant isolation.

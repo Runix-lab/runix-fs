@@ -15,7 +15,7 @@ implementation and verification evidence.
 | [Initial commercial draft](marketplace-launch-commercial-draft.md) | Delegated reference-based pricing, exact units, cost gap and proposed policies |
 | [Metering outbox](marketplace-metering.md) | Durable sealed-record dispatch, leases, SDK response handling and local verification scope |
 | [Gateway research](marketplace-gateway-research.md) | Verified AI/API gateway listings and future product packaging, separate from FS launch |
-| [Local engine smoke](marketplace-local-smoke.md) | Actual write/read, historical crash failure, WAL fix and scoped recovery verification |
+| [Local engine smoke](marketplace-local-smoke.md) | Write/read, historical crash failure, WAL fix, local S3-compatible write-through and recovery evidence |
 | [Website](website-integration.md) | Public website and future authenticated console integration |
 | [Roadmap](roadmap.md) | Dependency order and acceptance gates for subsequent development |
 | [Verification](verification.md) | Actual migration tests, CI results and publication boundaries |
