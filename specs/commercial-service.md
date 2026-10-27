@@ -237,3 +237,19 @@ and run `python -m unittest discover -s scripts/runix -p test_marketplace_adapte
 Tests use actual botocore 1.43.118 models and Stubber, not real purchases. The
 SDK model includes LicenseArn, Metadata.AgreementId and the LICENSE_ARN filter.
 No CustomerIdentifier dependency or BatchMeterUsage invocation is introduced.
+
+## Pending purchase binding, 2026-10-27
+
+Token resolution now lives in `RegistrationGateway`, independent of Contract
+entitlements; `ContractGateway` reuses it without changing its public interface.
+`marketplace_registration.py` persists hashed short-lived claims, operator-managed
+organization memberships, immutable license/organization bindings and unique
+pending-license-verification intents. Seventeen tests cover the SDK boundary,
+authorization, replay, races, rollback and process exit. See
+marketplace-registration.md for precise contracts.
+
+This is not deployed organization authentication. `Principal` must be supplied
+by a future verified authentication middleware; constructing it is not login.
+There is still no HTTP registration handler, CSRF/redirect/session implementation,
+verified current PAYG activation or provisioner. The unique intent is a durable
+pending work item, never a successful cluster or activation response.

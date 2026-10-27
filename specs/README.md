@@ -14,6 +14,7 @@ implementation and verification evidence.
 | [Marketplace listing](marketplace-listing.md) | Seller evidence, draft identity, publication gates and outstanding commercial decisions |
 | [Initial commercial draft](marketplace-launch-commercial-draft.md) | Delegated reference-based pricing, exact units, cost gap and proposed policies |
 | [Metering and storage ledger](marketplace-metering.md) | Exact byte-time conversion, durable sealed-record dispatch, leases, SDK responses and verification limits |
+| [Registration binding](marketplace-registration.md) | SDK resolution, private pending claims, durable organization authorization and unimplemented SSO/HTTP boundaries |
 | [Gateway research](marketplace-gateway-research.md) | Verified AI/API gateway listings and future product packaging, separate from FS launch |
 | [Local engine smoke](marketplace-local-smoke.md) | Write/read, historical crash failure, WAL fix, local S3-compatible write-through and recovery evidence |
 | [Website](website-integration.md) | Public website and future authenticated console integration |

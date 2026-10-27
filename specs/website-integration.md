@@ -49,3 +49,9 @@ placeholder handlers returning success during migration. Keep management RPC,
 worker traffic and upstream Web UI private; expose only the authenticated Runix
 API and user-appropriate views. Service domains, identity provider and final
 pricing remain implementation decisions, not DNS changes performed here.
+
+Local progress, 2026-10-27: marketplace_registration.py now implements pending
+claims and durable membership/binding logic beneath the proposed HTTP routes.
+Its Principal parameter requires a verified future authentication context;
+it does not implement a login service. No route in the table above is deployed
+or ready to replace a marketing URL with a Marketplace fulfillment URL.

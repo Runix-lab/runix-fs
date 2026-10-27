@@ -1,4 +1,4 @@
-"""AWS identity and Contract entitlement adapter; no HTTP or provisioning side effects."""
+"""AWS registration and optional Contract adapter; no HTTP/provisioning side effects."""
 
 import re
 from dataclasses import dataclass
@@ -40,26 +40,27 @@ def validate_purchase(purchase, expected_product):
         raise MarketplaceDenied("Invalid Marketplace purchase identity")
 
 
-class ContractGateway:
+class RegistrationGateway:
     @classmethod
     def from_session(cls, session, seller_account, product_code):
         return cls(
             session.client("sts", region_name="us-east-1"),
             session.client("meteringmarketplace", region_name="us-east-1"),
-            session.client("marketplace-entitlement", region_name="us-east-1"),
             seller_account,
             product_code,
         )
 
-    def __init__(self, sts, metering, entitlements, seller_account, product_code):
-        if not re.fullmatch(r"[0-9]{12}", seller_account) or not product_code:
+    def __init__(self, sts, metering, seller_account, product_code):
+        if (not isinstance(seller_account, str)
+                or not re.fullmatch(r"[0-9]{12}", seller_account)
+                or not isinstance(product_code, str) or not product_code.strip()):
             raise ValueError("Seller account and product code are required")
         identity = self._call(sts.get_caller_identity)
         if identity.get("Account") != seller_account:
             raise MarketplaceDenied("AWS caller is not the configured seller")
         self.metering = metering
-        self.entitlements = entitlements
         self.product_code = product_code
+        self.seller_account = seller_account
 
     @staticmethod
     def _call(operation, **parameters):
@@ -88,6 +89,22 @@ class ContractGateway:
         )
         validate_purchase(purchase, self.product_code)
         return purchase
+
+
+class ContractGateway(RegistrationGateway):
+    @classmethod
+    def from_session(cls, session, seller_account, product_code):
+        return cls(
+            session.client("sts", region_name="us-east-1"),
+            session.client("meteringmarketplace", region_name="us-east-1"),
+            session.client("marketplace-entitlement", region_name="us-east-1"),
+            seller_account,
+            product_code,
+        )
+
+    def __init__(self, sts, metering, entitlements, seller_account, product_code):
+        super().__init__(sts, metering, seller_account, product_code)
+        self.entitlements = entitlements
 
     def contract_quantity(self, purchase, dimension, now):
         validate_purchase(purchase, self.product_code)

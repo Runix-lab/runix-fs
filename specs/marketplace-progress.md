@@ -2,6 +2,21 @@
 
 ## 2026-10-27, Asia/Shanghai
 
+- Extracted RegistrationGateway from the Contract adapter and implemented
+  durable pending claims/organization bindings, specified before code in
+  marketplace-registration.md. Seventeen new tests pass; combined suite now
+  97 passed, including original Contract behavior. Binding races, cross-org
+  denial, expired/revoked contexts, raw-token non-persistence, process exit
+  and partial binding/intent rollback were exercised. Claims/intents are local
+  primitives, not an HTTP registration endpoint, SSO login or real provisioning.
+- Refreshed current AWS EventBridge schema and actual SDK operation shapes.
+  License Updated carries identity but the example has no explicit active
+  flag; PAYG guidance excludes GetEntitlements. Final-reporting window wording
+  still conflicts across official pages. No activation or cancellation deadline
+  was invented to bypass those unresolved live-integration requirements.
+- Previous goal turn made commit e3637af and passing new accounting tests;
+  it was progress, not a live wait. No production spend, paid purchase, new
+  Marketplace request, public buyer URL or visible launch is claimed here.
 - Implemented exact GiB-hour interval accounting in marketplace_storage_usage.py
   with immutable source-event replay, gap/order rejection, persistent per-license
   remainders, final fractional waiver and atomic hourly outbox sealing. Nineteen
