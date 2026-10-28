@@ -75,3 +75,9 @@ passing them does not prove deployed identity-provider integration. Issuer is
 fixed per database and contexts must expire within 15 minutes. Membership
 management remains an operator bootstrap method without an HTTP listener.
 No active license, resource, metering job or buyer-visible console is produced.
+
+Local authentication progress: control_plane_auth.py now constructs Principal
+from an actually verified RS256 access token, with fixed issuer/audience/client
+and time/scope checks. See control-plane-auth.md. This replaces caller-made
+contexts at the future API boundary; it does not configure a real Runix IdP,
+OAuth browser flow or public HTTPS registration endpoint.

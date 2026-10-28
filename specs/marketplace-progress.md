@@ -2,6 +2,16 @@
 
 ## 2026-10-28, Asia/Shanghai
 
+- Implemented actual RS256/RFC9068 access-token verification from a pinned
+  public JWKS. Thirteen new real-signature tests pass; combined suite now 131
+  passed with provenance/whitespace checks. Verified identities flow into fresh
+  organization membership checks; token org/admin claims do not grant roles.
+  Private signing keys exist only as ephemeral in-memory test fixtures. No
+  real provider, browser login, public service or purchase is claimed.
+- Actual AWS CLI identity recheck returned NoCredentials. Production budget
+  remains declined. No seller identity, positive license state or paid resource
+  was inferred from local tests. Previous completed goal turn produced real
+  lifecycle code and a successful remote CI run; it was concrete progress.
 - Committed lifecycle work as d7b0fdc. Created and pushed the review branch
   codex/marketplace-saas-integration. Fetch found a new remote main commit
   fbe0557 (Chinese quick-learn guide); merged it without overwriting its README
