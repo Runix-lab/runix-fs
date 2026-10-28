@@ -1,5 +1,27 @@
 # Migration verification record
 
+## Marketplace preparation branch, 2026-10-28
+
+Published source review branch: `codex/marketplace-saas-integration` in
+Runix-lab/runix-fs; remote main remains separate. Preserved the remote Chinese
+quick-learn update fbe0557 while merging into the preparation branch.
+
+GitHub Actions [run 40620464111](https://github.com/Runix-lab/runix-fs/actions/runs/40620464111)
+completed with success for exact commit
+`d7c57e8c043f258a1b0a77d87a53e15ba5b229f8`. Job details and downloaded logs
+confirmed 118 Python tests, provenance/whitespace checks and 19 existing Linux
+fault-runtime tests passed. This is not a full-engine build, inode-store WAL
+test run, FUSE/S3 integration or commercial delivery test. Separate local engine
+and S3-compatible observations remain in marketplace-local-smoke.md.
+
+The branch includes local registration/binding, exact storage interval accounting,
+durable metering and negative-event guards with their explicit unimplemented
+authentication, activation, collector, provisioner and production boundaries.
+No live Marketplace purchase, final-metering acceptance, public visibility or
+operational SaaS URL is established by GitHub CI.
+
+## Original migration evidence
+
 Date: 2026-10-21 (America/Los_Angeles).
 
 ## Confirmed before publication

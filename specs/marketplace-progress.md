@@ -2,6 +2,19 @@
 
 ## 2026-10-28, Asia/Shanghai
 
+- Committed lifecycle work as d7b0fdc. Created and pushed the review branch
+  codex/marketplace-saas-integration. Fetch found a new remote main commit
+  fbe0557 (Chinese quick-learn guide); merged it without overwriting its README
+  or migration-test changes. Merge snapshot: d7c57e8c043f258a1b0a77d87a53e15ba5b229f8.
+  Remote main was not updated and no PR/merge/release was created.
+- GitHub Actions run 40620464111 completed successfully for that exact snapshot:
+  https://github.com/Runix-lab/runix-fs/actions/runs/40620464111. Read actual job
+  conclusions and logs: 118 Python tests, provenance/whitespace checks and 19
+  Linux fault-runtime tests passed. This CI does not execute the earlier local
+  S3 integration, inode-store WAL subset, FUSE, SaaS HTTP or Marketplace purchase.
+  Branch code/artwork is inspectable at
+  https://github.com/Runix-lab/runix-fs/tree/codex/marketplace-saas-integration.
+  This is a source-review URL, not a usable SaaS or public buyer listing URL.
 - Recovered the interrupted lifecycle work, completed a durable negative-event
   reducer and connected stop guards to registration, usage accumulation, sealing
   and outbox dispatch. Twenty-one new tests and all 118 combined Python tests
