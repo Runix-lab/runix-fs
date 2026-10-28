@@ -253,3 +253,16 @@ by a future verified authentication middleware; constructing it is not login.
 There is still no HTTP registration handler, CSRF/redirect/session implementation,
 verified current PAYG activation or provisioner. The unique intent is a durable
 pending work item, never a successful cluster or activation response.
+
+## Negative lifecycle guard, 2026-10-28
+
+`marketplace_lifecycle.py` now persists terminal agreement/license events as
+durable stop records. Existing registration, usage ledger and outbox paths
+check them, quarantine pending/sending usage and retain accepted/in-flight
+audit evidence. Twenty-one new tests pass; combined suite: 118. This is an
+internal reducer requiring an authenticated event transport, not a public
+webhook or deployed revocation system. Final usage is held for reconciliation
+until the actual seller integration's deadline is verified. It does not
+automatically delete data, refund bills, verify positive activation, consume
+provisioning intents or enforce private-cluster access. See
+marketplace-lifecycle.md for the precise boundary and remaining gates.

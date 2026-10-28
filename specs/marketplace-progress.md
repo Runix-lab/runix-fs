@@ -1,5 +1,27 @@
 # Marketplace progress log
 
+## 2026-10-28, Asia/Shanghai
+
+- Recovered the interrupted lifecycle work, completed a durable negative-event
+  reducer and connected stop guards to registration, usage accumulation, sealing
+  and outbox dispatch. Twenty-one new tests and all 118 combined Python tests
+  passed, including process exit/reopen, stop/enqueue races, quarantine rollback
+  and stop during an SDK request. Accepted/in-flight audit and source data are
+  retained. No live event queue, provisioning or final-flush acceptance is claimed.
+- Initial verification failed because the earlier temporary environment lacked
+  dependencies. Respected the externally-managed Python refusal; created a new
+  isolated verification environment and installed pinned SDK/PyYAML packages.
+  Full passing verification used /tmp/runix-marketplace-verify-20261028.
+- Browser automation runtime was reset. Re-selected the documented Chrome
+  extension channel, listed existing AWS tabs and attempted to read the existing
+  product overview (tab 563712926). Page control timed out and reset its runtime.
+  Listing a tab is not proof of an authenticated session. Current seller/product
+  state was not freshly verified; last verified product remains Staging. No new
+  request, image upload, price, visibility change or paid resource was submitted.
+- Previous completed goal turn was progress via commit c817ef6; the interrupted
+  turn also wrote concrete guards/specifications. These are not live AWS waits.
+  Full publication objective remains incomplete; no public SaaS URL exists.
+
 ## 2026-10-27, Asia/Shanghai
 
 - Extracted RegistrationGateway from the Contract adapter and implemented

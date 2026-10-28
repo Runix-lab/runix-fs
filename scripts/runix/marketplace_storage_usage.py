@@ -48,6 +48,7 @@ class StorageUsageLedger:
             raise ValueError('Activation must be a past or current service time')
         with self.outbox.transaction():
             self.outbox.bind_purchase(purchase)
+            self.outbox.assert_not_stopped(purchase)
             existing = self.db.execute('SELECT * FROM storage_streams WHERE license=?',
                                        (purchase.license_arn,)).fetchone()
             if existing is not None:
@@ -77,6 +78,7 @@ class StorageUsageLedger:
                 if tuple(previous) != (left, right, str(logical_bytes)):
                     raise MeteringConflict('Source event replay changed its usage')
                 return False
+            self.outbox.assert_not_stopped(purchase)
             if stream['closed'] or left != stream['observed']:
                 raise MeteringConflict('Usage stream closed, missing interval or out of order')
             self.db.execute('INSERT INTO storage_intervals VALUES(?,?,?,?,?)',
@@ -104,6 +106,7 @@ class StorageUsageLedger:
             raise ValueError('Seal requires a completed UTC hour or final partial hour')
         with self.outbox.transaction():
             stream = self._stream(purchase)
+            self.outbox.assert_not_stopped(purchase)
             if cutoff < stream['sealed'] or cutoff > stream['observed']:
                 raise MeteringConflict('Unobserved or stale seal boundary')
             if stream['closed']:

@@ -105,6 +105,7 @@ class RegistrationRegistry:
         digest = hashlib.sha256(claim.encode('ascii')).hexdigest()
         with self.outbox.transaction():
             self.outbox.bind_purchase(purchase)
+            self.outbox.assert_not_stopped(purchase)
             self.db.execute('INSERT INTO registration_claims VALUES(?,?,?,?)',
                             (digest, purchase.license_arn, current, current + ttl_seconds))
         return claim
@@ -119,6 +120,8 @@ class RegistrationRegistry:
             row = self.db.execute('SELECT * FROM registration_claims WHERE digest=?', (digest,)).fetchone()
             if row is None or not row['issued'] <= current < row['expires']:
                 raise MarketplaceDenied('Unknown or expired registration claim')
+            if self.outbox.stop_info(row['license']):
+                raise MarketplaceDenied('Subscription stopped; binding denied')
             existing = self.db.execute('SELECT * FROM org_purchases WHERE license=?', (row['license'],)).fetchone()
             if existing is not None and existing['org'] != org:
                 raise MarketplaceDenied('Purchase already belongs to an organization')
@@ -139,4 +142,10 @@ class RegistrationRegistry:
                 FROM org_purchases p JOIN licenses l ON l.license=p.license
                 JOIN provisioning_intents i ON i.license=p.license
                 WHERE p.org=? ORDER BY p.license''', (org,)).fetchall()
-            return [dict(row) for row in rows]
+            result = []
+            for row in rows:
+                value = dict(row)
+                if self.outbox.stop_info(row['license']):
+                    value['state'] = 'stopped_reconciliation'
+                result.append(value)
+            return result

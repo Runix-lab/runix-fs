@@ -83,6 +83,12 @@ class MeteringOutbox:
                 self.db.execute("""CREATE TABLE IF NOT EXISTS licenses (
                     license TEXT PRIMARY KEY, account TEXT NOT NULL,
                     agreement TEXT NOT NULL)""")
+                self.db.execute("""CREATE TABLE IF NOT EXISTS agreement_stops (
+                    account TEXT NOT NULL, agreement TEXT NOT NULL, cutoff INTEGER NOT NULL,
+                    PRIMARY KEY(account,agreement))""")
+                self.db.execute("""CREATE TABLE IF NOT EXISTS license_stops (
+                    license TEXT PRIMARY KEY, account TEXT NOT NULL,
+                    agreement TEXT NOT NULL, cutoff INTEGER NOT NULL)""")
                 self.db.execute("""CREATE TABLE IF NOT EXISTS usage (
                     id INTEGER PRIMARY KEY, license TEXT NOT NULL, dimension TEXT NOT NULL,
                     hour INTEGER NOT NULL, agreement TEXT NOT NULL, payload TEXT NOT NULL,
@@ -126,6 +132,41 @@ class MeteringOutbox:
                                    (purchase.license_arn,)).fetchone()
         if tuple(identity) != (purchase.account_id, purchase.agreement_id):
             raise MeteringConflict("License identity cannot be rebound")
+        stopped_identity = self.db.execute(
+            "SELECT account,agreement FROM license_stops WHERE license=?",
+            (purchase.license_arn,),
+        ).fetchone()
+        if stopped_identity and tuple(stopped_identity) != (purchase.account_id, purchase.agreement_id):
+            raise MeteringConflict("Stopped license identity cannot be rebound")
+
+    def stop_info(self, license_arn):
+        row = self.db.execute("SELECT cutoff FROM license_stops WHERE license=?",
+                              (license_arn,)).fetchone()
+        agreement = self.db.execute("""SELECT s.cutoff FROM agreement_stops s
+            JOIN licenses l ON l.account=s.account AND l.agreement=s.agreement
+            WHERE l.license=?""", (license_arn,)).fetchone()
+        cutoffs = [value[0] for value in (row, agreement) if value is not None]
+        return {"cutoff": min(cutoffs)} if cutoffs else None
+
+    def assert_not_stopped(self, purchase):
+        validate_purchase(purchase, self.product_code)
+        agreement_stop = self.db.execute(
+            "SELECT 1 FROM agreement_stops WHERE account=? AND agreement=?",
+            (purchase.account_id, purchase.agreement_id),
+        ).fetchone()
+        if agreement_stop or self.stop_info(purchase.license_arn):
+            raise MarketplaceDenied("Subscription stopped; reconciliation required")
+
+    def quarantine_stopped(self):
+        """Internal write helper; caller holds the enclosing write transaction."""
+        if not self.db.in_transaction:
+            raise RuntimeError("Lifecycle quarantine requires a write transaction")
+        self.db.execute("""UPDATE usage SET state='quarantined',
+            reason='lifecycle_stop_reconcile',lease=NULL,lease_until=NULL
+            WHERE state IN ('pending','sending') AND (
+                license IN (SELECT license FROM license_stops) OR
+                license IN (SELECT l.license FROM licenses l JOIN agreement_stops s
+                    ON l.account=s.account AND l.agreement=s.agreement))""")
 
     def close(self):
         self.db.close()
@@ -159,6 +200,7 @@ class MeteringOutbox:
             raise ValueError("Record exceeds the bounded request payload size")
         with self.transaction():
             self.bind_purchase(purchase)
+            self.assert_not_stopped(purchase)
             self.db.execute("""INSERT OR IGNORE INTO usage
                 (license,dimension,hour,agreement,payload,deadline) VALUES(?,?,?,?,?,?)""",
                 (purchase.license_arn, dimension, stamp // 3600, purchase.agreement_id, payload, deadline))
@@ -183,6 +225,7 @@ class MeteringOutbox:
             raise ValueError("Lease must be 1..300 seconds")
         token = uuid.uuid4().hex
         with self.transaction():
+            self.quarantine_stopped()
             self.db.execute("""UPDATE usage SET state='quarantined',reason='deadline_expired',lease=NULL,lease_until=NULL
                 WHERE state IN ('pending','sending') AND deadline<=?""", (current,))
             rows = self.db.execute("""SELECT * FROM usage WHERE state='pending'
@@ -201,6 +244,7 @@ class MeteringOutbox:
         rows = [self.db.execute("SELECT * FROM usage WHERE id=?", (key,)).fetchone() for key in batch.rows]
         return bool(rows) and all(
             row is not None and row["state"] == 'sending' and row["lease"] == batch.token
+            and not self.stop_info(row["license"])
             and row["lease_until"] > current and row["deadline"] > current
             and self.record(row) == record
             for row, record in zip(rows, batch.records)
@@ -301,5 +345,6 @@ class MeteringWorker:
         except BotoCoreError:
             self.outbox.failed(batch, "TransportError", True, clock())
             return 0
-        self.outbox.finish(batch, response, clock())
+        if not self.outbox.finish(batch, response, clock()):
+            return 0
         return len(batch.rows)
