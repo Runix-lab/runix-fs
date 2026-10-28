@@ -9,7 +9,7 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from unittest.mock import Mock, call
+from unittest.mock import ANY, Mock, call
 
 import boto3
 from botocore.exceptions import EndpointConnectionError
@@ -67,7 +67,12 @@ class RegistrationTests(unittest.TestCase):
         session.client.side_effect = [sts, self.metering]
         gateway = RegistrationGateway.from_session(session, SELLER, PURCHASE.product_code)
         self.assertEqual(gateway.seller_account, SELLER)
-        self.assertEqual(session.client.call_args_list, [call('sts', region_name='us-east-1'), call('meteringmarketplace', region_name='us-east-1')])
+        self.assertEqual(session.client.call_args_list, [call('sts', region_name='us-east-1', config=ANY), call('meteringmarketplace', region_name='us-east-1', config=ANY)])
+        for client_call in session.client.call_args_list:
+            config = client_call.kwargs['config']
+            self.assertEqual((config.connect_timeout, config.read_timeout), (3, 5))
+            self.assertEqual(config.retries['total_max_attempts'], 2)
+            self.assertTrue(config.ignore_configured_endpoint_urls)
 
     def test_wrong_seller_and_product_deny_before_persistence(self):
         sts = Mock()

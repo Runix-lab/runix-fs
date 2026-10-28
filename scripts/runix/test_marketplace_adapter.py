@@ -74,12 +74,16 @@ class ContractAdapterTests(unittest.TestCase):
     def test_factory_uses_one_session_and_supported_region(self):
         self.stubs["sts"].add_response("get_caller_identity", {"Account": SELLER}, {})
         session = Mock()
-        session.client.side_effect = lambda service, region_name: self.clients[service]
+        session.client.side_effect = lambda service, **_kwargs: self.clients[service]
         gateway = ContractGateway.from_session(session, SELLER, PRODUCT)
         self.assertIs(gateway.entitlements, self.clients["marketplace-entitlement"])
         self.assertEqual(session.client.call_count, 3)
         for call in session.client.call_args_list:
-            self.assertEqual(call.kwargs, {"region_name": "us-east-1"})
+            self.assertEqual(call.kwargs['region_name'], "us-east-1")
+            config = call.kwargs['config']
+            self.assertEqual((config.connect_timeout, config.read_timeout), (3, 5))
+            self.assertEqual(config.retries['total_max_attempts'], 2)
+            self.assertTrue(config.ignore_configured_endpoint_urls)
 
     def test_invalid_registration_input(self):
         for token in (None, "", " ", 123):

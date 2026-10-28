@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 
+from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 
 
@@ -41,11 +42,19 @@ def validate_purchase(purchase, expected_product):
 
 
 class RegistrationGateway:
+    @staticmethod
+    def _client(session, service):
+        return session.client(service, region_name="us-east-1", config=Config(
+            connect_timeout=3, read_timeout=5,
+            retries={"mode": "standard", "total_max_attempts": 2},
+            ignore_configured_endpoint_urls=True,
+        ))
+
     @classmethod
     def from_session(cls, session, seller_account, product_code):
         return cls(
-            session.client("sts", region_name="us-east-1"),
-            session.client("meteringmarketplace", region_name="us-east-1"),
+            cls._client(session, "sts"),
+            cls._client(session, "meteringmarketplace"),
             seller_account,
             product_code,
         )
@@ -95,9 +104,9 @@ class ContractGateway(RegistrationGateway):
     @classmethod
     def from_session(cls, session, seller_account, product_code):
         return cls(
-            session.client("sts", region_name="us-east-1"),
-            session.client("meteringmarketplace", region_name="us-east-1"),
-            session.client("marketplace-entitlement", region_name="us-east-1"),
+            cls._client(session, "sts"),
+            cls._client(session, "meteringmarketplace"),
+            cls._client(session, "marketplace-entitlement"),
             seller_account,
             product_code,
         )

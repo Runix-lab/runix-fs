@@ -266,3 +266,17 @@ until the actual seller integration's deadline is verified. It does not
 automatically delete data, refund bills, verify positive activation, consume
 provisioning intents or enforce private-cluster access. See
 marketplace-lifecycle.md for the precise boundary and remaining gates.
+
+## Local HTTP and signature boundary, 2026-10-28
+
+control_plane_auth.py validates pinned-key RS256 access tokens before constructing
+Principal, and control_plane_http.py now connects real HTTP registration/binding
+and organization/purchase reads to the existing SDK/database components. Tests
+include a real loopback request cycle, real ephemeral RSA signatures, botocore
+Stubber, role revocation, cross-org denial, concurrency and rollback. The combined
+suite has 153 passing tests. See control-plane-auth.md/control-plane-http.md.
+
+These do not constitute deployed SSO or a working managed filesystem service.
+Registration stays pending, binding stays pending license verification, and
+delivery readiness returns 503. There is no public endpoint, real IdP/client
+configuration, positive PAYG activation, cluster provisioning or buyer test.

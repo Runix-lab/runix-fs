@@ -12,7 +12,7 @@ import uuid
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
-from marketplace_adapter import MarketplaceDenied, Purchase
+from marketplace_adapter import MarketplaceDenied, MarketplaceUnavailable, Purchase
 from marketplace_metering import MeteringConflict, instant
 
 
@@ -42,7 +42,7 @@ class RegistrationRegistry:
         if (parsed.scheme != 'https' or not parsed.hostname or parsed.username
                 or parsed.password or parsed.query or parsed.fragment or len(issuer) > 2048):
             raise ValueError('A fixed HTTPS authentication issuer is required')
-        if (gateway.product_code != outbox.product_code
+        if gateway is not None and (gateway.product_code != outbox.product_code
                 or gateway.seller_account != outbox.seller_account):
             raise ValueError('Resolver and database seller/product differ')
         self.outbox, self.gateway, self.issuer = outbox, gateway, issuer
@@ -78,8 +78,7 @@ class RegistrationRegistry:
                 self.db.execute('''INSERT INTO org_memberships VALUES(?,?,?)
                     ON CONFLICT(org,subject) DO UPDATE SET role=excluded.role''', (org, subject, role))
 
-    def _authorize(self, principal, org, now, admin=False):
-        identifier(org)
+    def _authenticated_subject(self, principal, now):
         if not isinstance(principal, Principal) or principal.issuer != self.issuer:
             raise MarketplaceDenied('Verified authentication context required')
         try:
@@ -90,6 +89,11 @@ class RegistrationRegistry:
             raise MarketplaceDenied('Invalid authentication context') from None
         if expiry <= current or expiry - current > 900:
             raise MarketplaceDenied('Expired or excessively long authentication context')
+        return principal.subject
+
+    def _authorize(self, principal, org, now, admin=False):
+        identifier(org)
+        self._authenticated_subject(principal, now)
         row = self.db.execute('SELECT role FROM org_memberships WHERE org=? AND subject=?',
                               (org, principal.subject)).fetchone()
         if row is None or (admin and row[0] not in {'owner', 'admin'}):
@@ -99,6 +103,8 @@ class RegistrationRegistry:
         if type(ttl_seconds) is not int or not 1 <= ttl_seconds <= 900:
             raise ValueError('Registration claim TTL must be 1..900 seconds')
         current = instant(now)
+        if self.gateway is None:
+            raise MarketplaceUnavailable('Marketplace registration unavailable')
         # Resolve before persisting. Neither the raw token nor its hash is stored.
         purchase = self.gateway.resolve_registration(aws_token)
         claim = secrets.token_urlsafe(32)
@@ -149,3 +155,10 @@ class RegistrationRegistry:
                     value['state'] = 'stopped_reconciliation'
                 result.append(value)
             return result
+
+    def list_organizations(self, principal, now):
+        with self.outbox.transaction():
+            subject = self._authenticated_subject(principal, now)
+            rows = self.db.execute('SELECT org,role FROM org_memberships WHERE subject=? ORDER BY org',
+                                   (subject,)).fetchall()
+            return [dict(row) for row in rows]

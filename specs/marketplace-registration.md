@@ -81,3 +81,10 @@ from an actually verified RS256 access token, with fixed issuer/audience/client
 and time/scope checks. See control-plane-auth.md. This replaces caller-made
 contexts at the future API boundary; it does not configure a real Runix IdP,
 OAuth browser flow or public HTTPS registration endpoint.
+
+Subsequent local HTTP implementation is recorded in control-plane-http.md:
+registration 202 and binding 200 are real durable pending states, not active
+licenses or provisioning results. The registry can serve existing authenticated
+organization reads without a registration gateway; attempting to register while
+that gateway is unavailable fails with 503 through the HTTP layer. Actual browser
+SSO, live seller calls and customer resource creation are still unverified.

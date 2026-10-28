@@ -2,6 +2,16 @@
 
 ## 2026-10-28, Asia/Shanghai
 
+- Connected actual local HTTP registration, binding, organization and purchase
+  routes to signed access-token verification and the durable registry. Twenty-two
+  new tests and all 153 combined Python tests pass. Actual loopback requests
+  exercise real RSA signatures and SDK Stubber; this is not a real Marketplace
+  purchase. Pending states/readiness 503 remain explicit; no fake cluster or
+  endpoint is returned. Temporary test server and keys are cleaned up.
+- Added bounded SDK factory connection/read timeouts and retry counts, checked
+  against current botocore documentation and covered by both factory tests.
+  The HTTP runner requires verified operator configuration and seller identity,
+  binds only loopback and does not ship an invented identity-provider setup.
 - Implemented actual RS256/RFC9068 access-token verification from a pinned
   public JWKS. Thirteen new real-signature tests pass; combined suite now 131
   passed with provenance/whitespace checks. Verified identities flow into fresh

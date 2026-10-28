@@ -16,6 +16,7 @@ implementation and verification evidence.
 | [Metering and storage ledger](marketplace-metering.md) | Exact byte-time conversion, durable sealed-record dispatch, leases, SDK responses and verification limits |
 | [Registration binding](marketplace-registration.md) | SDK resolution, private pending claims, durable organization authorization and unimplemented SSO/HTTP boundaries |
 | [Access-token verification](control-plane-auth.md) | Actual RSA access-token verification and the remaining identity-provider/browser-login setup |
+| [Control-plane HTTP](control-plane-http.md) | Real local API routes, signed identities, registration handoff and tested readiness limits |
 | [Negative lifecycle events](marketplace-lifecycle.md) | Durable stop guards, held final usage, event replay and live-transport limitations |
 | [Gateway research](marketplace-gateway-research.md) | Verified AI/API gateway listings and future product packaging, separate from FS launch |
 | [Local engine smoke](marketplace-local-smoke.md) | Write/read, historical crash failure, WAL fix, local S3-compatible write-through and recovery evidence |
