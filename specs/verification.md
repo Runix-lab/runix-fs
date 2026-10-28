@@ -2,6 +2,14 @@
 
 ## Marketplace preparation branch, 2026-10-28
 
+New HTTP/auth code snapshot `0d5189c1f9f413f947803e6ca97da8fceead06ec`
+passed [run 40624083374](https://github.com/Runix-lab/runix-fs/actions/runs/40624083374).
+Actual logs show 153 Python tests and the 19 Linux fault-runtime tests passed.
+The Python suite includes real temporary loopback HTTP requests and ephemeral
+RSA signatures, with Marketplace API responses supplied by botocore Stubber.
+This does not prove a real IdP, AWS purchase, license activation, deployed
+HTTPS endpoint or cluster delivery. No public SaaS URL is established.
+
 Published source review branch: `codex/marketplace-saas-integration` in
 Runix-lab/runix-fs; remote main remains separate. Preserved the remote Chinese
 quick-learn update fbe0557 while merging into the preparation branch.

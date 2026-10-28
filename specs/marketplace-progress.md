@@ -2,6 +2,14 @@
 
 ## 2026-10-28, Asia/Shanghai
 
+- Commits bd69406 (signed access tokens) and 0d5189c (HTTP boundary) are pushed
+  to codex/marketplace-saas-integration. Exact code snapshot
+  0d5189c1f9f413f947803e6ca97da8fceead06ec passed GitHub Actions run
+  40624083374: https://github.com/Runix-lab/runix-fs/actions/runs/40624083374.
+  Read remote logs confirmed 153 Python tests, 19 Linux fault-runtime tests,
+  provenance and whitespace checks passed. These include local HTTP requests
+  with synthetic signed identities and SDK Stubber, not real buyer activation.
+  No Marketplace publication, identity provider or AWS deployment was created.
 - Connected actual local HTTP registration, binding, organization and purchase
   routes to signed access-token verification and the durable registry. Twenty-two
   new tests and all 153 combined Python tests pass. Actual loopback requests
