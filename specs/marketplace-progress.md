@@ -414,3 +414,10 @@ evidence. No cookies/credentials were extracted, no alternate protocol bypass
 was used, and no listing mutation was made. Last verified AWS product state
 remains Staging, unrefreshed. No new product, ChangeSet, price, fulfillment URL,
 public review or buyer-visible SaaS page is claimed.
+
+Implementation `460e425763c3e6eb4e7ccaa8708ab1ca1c3f2a74` was pushed normally to
+codex/marketplace-saas-integration. GitHub Actions run **40815445937** completed
+with **success**, confirmed by `gh run watch --exit-status`:
+https://github.com/Runix-lab/runix-fs/actions/runs/40815445937
+This CI verifies source/unit checks; actual backup/restore was local and has the
+separate runtime evidence above. It does not change Marketplace publication state.
