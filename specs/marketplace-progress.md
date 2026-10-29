@@ -421,3 +421,43 @@ with **success**, confirmed by `gh run watch --exit-status`:
 https://github.com/Runix-lab/runix-fs/actions/runs/40815445937
 This CI verifies source/unit checks; actual backup/restore was local and has the
 separate runtime evidence above. It does not change Marketplace publication state.
+
+## 2026-10-29 — PAYG update evidence and fresh pending-intent verification
+
+Previous goal turn was progress: actual offline backup/fresh-boundary restore,
+committed/pushed code 460e425 and successful CI. Continued the authorized local
+and draft scope, without cloud spending, purchases or a public launch claim.
+
+Obtained new authoritative evidence that changes the implementation path. Web
+search could not render the official Concurrent Agreements workshop. Opened it
+in the in-app browser, read its actual article and selected the PAYG tab. Task 2
+skips the Contract GetEntitlements path; Task 3's usage panel explicitly defines
+the License Updated - Manufacturer signal needed for PAYG, alongside the negative
+license signal. This resolves the earlier uncertainty from the generic example.
+Reference: https://catalog.workshops.aws/mpseller/en-US/saas/integration-for-concurrent-agreements
+No tutorial stack, IAM change, email subscription, metering request or buyer
+purchase was executed. Public documentation browsing does not establish seller
+portal access or current product status.
+
+Implemented PaygLicenseState: strict shared envelope/identity parsing, durable
+monotone update evidence, immutable audit/replay checks shared with negatives,
+and a fresh internal check for an existing organization-bound pending intent.
+AgreementReader runs outside the DB lock; current agreement/time, binding and
+negative stop guards are checked again before returning bounded evidence.
+Negative tombstones always win, including an event committed during the AWS read.
+Missing verification configuration or AWS errors never produce success. Pending
+intents are not advanced, and no resources, access credentials or usage are made.
+No guessed seller GetAgreementEntitlements call or legacy Contract PAYG check.
+
+Added 27 tests covering malformed/foreign events, pre-registration updates,
+repeat/cross-kind/changed-body replay, two licenses, event order, unauthorized
+binding, current/future/elapsed agreements, clock bounds, SDK errors, concurrent
+updates/stops, binding changes during reads, rollback and real process exit.
+All **220 Python tests pass locally**, with provenance and whitespace checks.
+Existing negative-reducer tests still pass. No Rust or engine change this turn.
+
+This is a local integration component, not a deployed positive-license service.
+Real EventBridge/SQS origin and IAM, missing-event reconciliation, IdP/browser
+login, resource provisioning/revocation, source usage, hard quota, final metering,
+production budget and buyer verification remain gates. The last confirmed AWS
+product state remains Staging, unrefreshed. No new ChangeSet or public buyer URL.

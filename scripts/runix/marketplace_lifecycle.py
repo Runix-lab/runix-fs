@@ -15,6 +15,7 @@ from marketplace_metering import MeteringConflict, instant
 
 ENDED = {'Purchase Agreement Ended - Manufacturer', 'Purchase Agreement Ended - Proposer'}
 DEPROVISIONED = 'License Deprovisioned - Manufacturer'
+UPDATED = 'License Updated - Manufacturer'
 TERMINAL = {'ARCHIVED', 'CANCELLED', 'EXPIRED', 'RENEWED', 'REPLACED',
             'ROLLED_BACK', 'SUPERSEDED', 'TERMINATED'}
 
@@ -55,7 +56,7 @@ class NegativeLifecycle:
                 account TEXT NOT NULL, agreement TEXT NOT NULL, license TEXT,
                 cutoff INTEGER NOT NULL, received INTEGER NOT NULL)''')
 
-    def _parse(self, event, now):
+    def _parse(self, event, now, *, allow_update=False):
         if not isinstance(event, dict):
             raise ValueError('Expected structured EventBridge event')
         current = instant(now)
@@ -64,7 +65,8 @@ class NegativeLifecycle:
                 or event.get('region') != 'us-east-1'):
             raise MarketplaceDenied('Foreign lifecycle event envelope')
         kind = event.get('detail-type')
-        if not isinstance(kind, str) or kind not in ENDED | {DEPROVISIONED}:
+        supported = ENDED | {DEPROVISIONED} | ({UPDATED} if allow_update else set())
+        if not isinstance(kind, str) or kind not in supported:
             raise ValueError('Unsupported event; no activation is inferred')
         event_id = event.get('id')
         try:
@@ -92,15 +94,16 @@ class NegativeLifecycle:
         if object_field(detail, 'proposer').get('accountId') != self.outbox.seller_account:
             raise MarketplaceDenied('Only configured direct-sale proposer is supported')
         product = detail.get('product')
-        if kind == DEPROVISIONED or product is not None:
+        license_event = kind in {DEPROVISIONED, UPDATED}
+        if license_event or product is not None:
             if not isinstance(product, dict):
                 raise ValueError('Product mapping required')
             if product.get('id') != self.product_id:
                 raise MarketplaceDenied('Foreign product ID')
-            if ('code' in product or kind == DEPROVISIONED) and product.get('code') != self.outbox.product_code:
+            if ('code' in product or license_event) and product.get('code') != self.outbox.product_code:
                 raise MarketplaceDenied('Foreign product code')
         license_arn = None
-        if kind == DEPROVISIONED:
+        if license_event:
             license_arn = object_field(detail, 'license').get('arn')
             validate_purchase(Purchase(buyer, license_arn, self.outbox.product_code, agreement_id), self.outbox.product_code)
         else:

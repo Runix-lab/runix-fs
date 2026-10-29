@@ -47,3 +47,11 @@ buyer/product/agreement substitution, missing/unknown evidence, statuses,
 future/elapsed/invalid dates, no-end PAYG, replay and concurrent reads, SDK errors,
 configuration and pre-call validation. Add slash-ARN registration and negative
 lifecycle regressions, including replay and stopped metering.
+
+Subsequent primary-source finding, 2026-10-29: the rendered Concurrent Agreements
+workshop's PAYG usage panel supplies the explicit License Updated activation
+signal that the generic event example did not establish. The new local
+PaygLicenseState uses that signal plus this reader's fresh agreement check and
+existing negative stop guards; see marketplace-payg-license.md. It still does
+not call buyer-oriented GetAgreementEntitlements, deploy trusted event transport,
+provision resources or establish a real AWS buyer's license state.

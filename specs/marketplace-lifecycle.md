@@ -89,3 +89,14 @@ No live EventBridge/SQS transport, resource revocation, customer-data deletion,
 accepted-charge refund, final-flush release or AWS purchase is exercised here.
 Those remain production gates; retained pending intents must never be consumed
 without fresh license verification and stop checks by a real provisioner.
+
+## Explicit PAYG update rule, 2026-10-29
+
+The rendered official Concurrent Agreements workshop now provides the needed
+PAYG-specific rule; see marketplace-payg-license.md for the source and scope.
+The negative reducer's apply method still rejects updates. Its internal parser
+can explicitly parse a matching update for the separate trusted PaygLicenseState
+component, sharing identity checks and the immutable lifecycle-event audit.
+Updates never clear a stop. Fresh agreement checks and post-read cancellation
+checks are implemented locally; live transport/origin verification, production
+access enforcement, final-flush timing and buyer tests remain unverified.
