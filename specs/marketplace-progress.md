@@ -322,3 +322,10 @@ login or product state. No console mutation or new ChangeSet is claimed. Last
 verified product state remains Staging (`prod-xw6kihs3wveu2`); current state is not
 freshly confirmed. No public buyer page or delivered SaaS endpoint exists in the
 evidence. Fulfillment URL and price dimensions remain unconfigured as last seen.
+
+Remote verification: implementation commit
+`07344f5bd1432ce88bf9354a15941abb63a8c88c` was pushed to
+`codex/marketplace-saas-integration`. GitHub Actions run **40812595351** completed
+with **success**, confirmed with `gh run watch --exit-status`:
+https://github.com/Runix-lab/runix-fs/actions/runs/40812595351
+This is source/CI verification, not seller API access or public delivery evidence.
