@@ -44,6 +44,11 @@ secret environment file were removed and the inventories checked. See
 This does not establish browser-session safety, production SSO, public TLS,
 shared Router identity, tenant provisioning or a live Marketplace purchase.
 
+Implementation `7088fac577b3723077added3f7d6357439023ff4` passed GitHub Actions
+[run 40824991106](https://github.com/Runix-lab/runix-fs/actions/runs/40824991106):
+actual completed success for both migration and Linux fault-runtime subset jobs.
+The real local IdP protocol smoke is separate from CI's unit/source checks.
+
 ## Original migration evidence
 
 Date: 2026-10-21 (America/Los_Angeles).

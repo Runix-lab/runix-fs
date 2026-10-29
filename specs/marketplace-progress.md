@@ -570,3 +570,11 @@ event reconciliation, final billing and real buyer verification remain gates.
 The existing Registry HTTPS issuer requirement has not been weakened for tests.
 Latest confirmed product remains Staging (not refreshed); no new ChangeSet,
 configured AWS price, review request or buyer-visible service was obtained.
+
+Implementation `7088fac577b3723077added3f7d6357439023ff4` was pushed normally to
+codex/marketplace-saas-integration. Actual GitHub Actions run **40824991106**
+completed with **success** for that exact SHA; migration and Linux fault-runtime
+subset jobs both succeeded:
+https://github.com/Runix-lab/runix-fs/actions/runs/40824991106
+The disposable real-provider protocol smoke was local; CI runs unit/source
+checks and does not deploy Casdoor, Runix SaaS or Marketplace infrastructure.
