@@ -369,3 +369,13 @@ The earlier documentation-only commit d979297 remains local after repeated
 GitHub HTTPS connection failures. Retry pushing the combined new commits after
 local verification; record actual remote result separately. This is a transport
 failure, not a reason to rewrite/force-push the work branch or claim publication.
+
+Publication/CI follow-up: first push returned GitHub server-side `commit_refs`
+failure. Read-only GitHub ref inspection confirmed the branch still at 07344f5.
+A normal retry then succeeded, advancing it to
+`14e8e2d2602dd7f31933d8cb2c64134db42ba0e3`, including the earlier d979297 docs.
+No force push or remote history rewrite. GitHub Actions run **40814083285** for
+that exact implementation SHA completed with **success**:
+https://github.com/Runix-lab/runix-fs/actions/runs/40814083285
+Remote CI is unit/source verification; the two actual Docker integration runs
+were executed locally and have the separate evidence described above.
