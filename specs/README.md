@@ -21,6 +21,7 @@ implementation and verification evidence.
 | [Agreement evidence](marketplace-agreement.md) | Read-only seller agreement identity/status checks and unresolved positive license verification |
 | [Gateway research](marketplace-gateway-research.md) | Verified AI/API gateway listings and future product packaging, separate from FS launch |
 | [Local engine smoke](marketplace-local-smoke.md) | Write/read, historical crash failure, WAL fix, local S3-compatible write-through and recovery evidence |
+| [Offline backup restore](marketplace-backup-smoke.md) | Actual stopped-state and object export restored into a fresh local boundary; production backup remains unimplemented |
 | [Website](website-integration.md) | Public website and future authenticated console integration |
 | [Roadmap](roadmap.md) | Dependency order and acceptance gates for subsequent development |
 | [Verification](verification.md) | Actual migration tests, CI results and publication boundaries |

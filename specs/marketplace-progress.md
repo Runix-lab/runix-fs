@@ -379,3 +379,38 @@ that exact implementation SHA completed with **success**:
 https://github.com/Runix-lab/runix-fs/actions/runs/40814083285
 Remote CI is unit/source verification; the two actual Docker integration runs
 were executed locally and have the separate evidence described above.
+
+## 2026-10-29 — actual offline backup to fresh-boundary restore
+
+Previous goal turn was progress: actual two-boundary local engine integration,
+cleanup, pushed commit 14e8e2d and passing CI. Continued local/draft-only work;
+production spending remains declined and no launch authorization was inferred
+for resources outside that scope.
+
+Added a synthetic offline backup/restore harness, bounded SDK object export/
+import/readback, an actual restore engine script and 15 unit/fault tests. Engine
+metadata, journal, worker state and configuration are copied only after checking
+that its original container has exited. Original engine/store/network are removed
+and inventories verified before constructing the restore boundary. A fresh store
+imports both known 4 MiB objects, verifies full readback bytes, then a real engine
+boots from the copied state without formatting or mounting original state.
+Old files match original bytes; a new write matches both engine and independent
+object-store reads. Both actual runs passed; final run has complete object-import
+readback. All test containers/networks and temporary fixture credentials were
+confirmed removed; unrelated services preserved. Full non-sensitive hashes,
+private evidence paths, reproduction and limits are in marketplace-backup-smoke.md.
+
+All **193 Python tests pass locally**, plus shell syntax, Python compilation,
+provenance/attribution and whitespace checks. This reuses the existing binary;
+no full Rust release rebuild, cold-cache recovery, FUSE, HA, production backup
+service/policy, production subscription or buyer test is claimed.
+
+AWS browser revalidation: the old numeric browser ID no longer consistently
+identified Chrome after a session reset. Refreshed documented browser inventory,
+selected the actual Chrome extension and read browser-troubleshooting guidance.
+Creating a new work tab returned Group not found, and claiming/reading the
+existing seller tab timed out. Enumeration is not authentication/product-state
+evidence. No cookies/credentials were extracted, no alternate protocol bypass
+was used, and no listing mutation was made. Last verified AWS product state
+remains Staging, unrefreshed. No new product, ChangeSet, price, fulfillment URL,
+public review or buyer-visible SaaS page is claimed.
