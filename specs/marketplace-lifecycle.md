@@ -22,7 +22,8 @@ seller registration generation and live event delivery remain release gates.
 
 Transactionally persist minimal immutable event digest/audit, monotone stop
 tombstones and quarantine of all pending/sending usage for affected licenses.
-Duplicate IDs with the same body are no-ops; changed-body replay is a conflict.
+Duplicate IDs with the same body are no-ops; changed-body replay is a conflict,
+except for the validated AWS archive replay-name delivery field described below.
 Later negative events may only move the stop boundary earlier. Missing positive
 events cannot resurrect a stopped license; a new purchase needs a separately
 verified new identity. Do not delete organization bindings, data, source usage,
@@ -100,3 +101,14 @@ component, sharing identity checks and the immutable lifecycle-event audit.
 Updates never clear a stop. Fresh agreement checks and post-read cancellation
 checks are implemented locally; live transport/origin verification, production
 access enforcement, final-flush timing and buyer tests remain unverified.
+
+## Queue receipt and archive replay, 2026-10-29
+
+marketplace_event_worker.py now has an SDK-backed local consumer with pinned
+role/queue/rule/policy checks and durable reducer commit before DeleteMessage.
+No infrastructure or live-origin validation was deployed. The common parser
+validates and excludes only the documented replay-name archive delivery field
+from new event digests; all remaining body/envelope changes conflict. Stops still
+win after archived positive and negative replays. Existing audit hashes are not
+rewritten, so incompatible historical replay digests remain held for explicit
+reconciliation. See marketplace-event-worker.md for proof, SDK models and limits.

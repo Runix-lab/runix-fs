@@ -469,3 +469,47 @@ https://github.com/Runix-lab/runix-fs/actions/runs/40817081688
 Read-only workflow listing confirmed the completed status and matching SHA.
 This is local/CI verification of synthetic event and SDK-model scenarios, not
 real seller transport, paid activation, provisioning or Marketplace publication.
+
+## 2026-10-29 — SDK event transport and real archive-replay semantics
+
+Previous goal turn was progress: local PAYG update/check implementation, pushed
+be8bc25 and successful CI. Continued local/draft-only scope. No AWS resource,
+permission, policy, subscription, archive, replay or billing request was created.
+
+Implemented SqsLifecycleWorker with actual SDK clients and a bounded CLI. It pins
+seller/consumer role and us-east-1 identifiers, reads actual queue attributes and
+rule/targets, checks the narrow raw-event route/send-policy/encryption/retention/
+retry/DLQ profile before polling and again before accepting a message. Root,
+foreign identity/queue/rule, broad sender policies and target input transforms
+are refused. No new resource or policy write API is called. Configured resource
+ARNs in tests are explicitly synthetic; no fabricated live configuration exists.
+
+One received event is size/checksum/JSON validated and committed through the
+real SQLite reducers before DeleteMessage. SDK failures are sanitized, invalid
+messages/DB failures are not acknowledged, and a delete failure can safely
+redeliver the same event with a new receipt handle. The CLI does not echo event
+bodies, handles, responses or credential-like configuration fields. A successful
+poll does not create a cluster, permit usage or mark the service ready.
+
+Re-read current primary SQS/EventBridge/IAM docs and installed botocore models.
+The classic event metadata page establishes the reserved source namespace;
+no v2 custom-bus metadata assumption was substituted for it. The official archive
+guide shows replay-name is added on archive replay. Updated canonical audit
+hashing to ignore only that validated transport field while preserving all
+business/envelope changes and all old stored hashes. Positive and negative
+archive replays stay idempotent and never clear stops. Real AWS service-origin
+and effective IAM validation remain outstanding; source strings alone never
+establish a trusted producer.
+
+Added 33 tests with actual botocore request/response models and SQLite. Final
+complete suite: **253 passed locally**, plus provenance, Python compilation and
+whitespace checks. The SDK rejected an initially empty paginated Targets fixture;
+fixed the fixture to the real model shape before counting the test as passed.
+Implementation and source references are in marketplace-event-worker.md.
+
+No live SQS receive/delete, EventBridge event or deployed role is verified.
+Actual route validation, monitoring/DLQ redrive, missed-event reconciliation,
+production identity/login, resource provision/revoke, quotas/source usage,
+final billing and buyer tests remain gates. Production budget is still declined.
+Last confirmed AWS product status remains Staging, unrefreshed; no ChangeSet,
+public review, fulfillment URL, configured price or buyer-visible service added.

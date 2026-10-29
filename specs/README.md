@@ -20,6 +20,7 @@ implementation and verification evidence.
 | [Negative lifecycle events](marketplace-lifecycle.md) | Durable stop guards, held final usage, event replay and live-transport limitations |
 | [Agreement evidence](marketplace-agreement.md) | Read-only seller agreement identity/status checks and unresolved positive license verification |
 | [PAYG license check](marketplace-payg-license.md) | Trusted update-event records, monotone stops and fresh internal agreement checks; no deployed activation |
+| [Event queue worker](marketplace-event-worker.md) | SDK polling, pinned deployment-profile checks, durable acknowledgement and archive replay handling; not deployed |
 | [Gateway research](marketplace-gateway-research.md) | Verified AI/API gateway listings and future product packaging, separate from FS launch |
 | [Local engine smoke](marketplace-local-smoke.md) | Write/read, historical crash failure, WAL fix, local S3-compatible write-through and recovery evidence |
 | [Offline backup restore](marketplace-backup-smoke.md) | Actual stopped-state and object export restored into a fresh local boundary; production backup remains unimplemented |

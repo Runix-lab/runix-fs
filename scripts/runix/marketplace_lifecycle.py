@@ -117,6 +117,14 @@ class NegativeLifecycle:
             raise ValueError('Invalid JSON event') from None
         if len(encoded) > 256 * 1024:
             raise ValueError('Lifecycle event is too large')
+        if 'replay-name' in event:
+            replay = event['replay-name']
+            if not isinstance(replay, str) or not re.fullmatch(r'[.A-Za-z0-9_-]{1,64}', replay):
+                raise ValueError('Invalid EventBridge replay metadata')
+            # AWS adds this delivery metadata during archive replay. Preserve
+            # every business/envelope field in the immutable event digest.
+            canonical = {key: value for key, value in event.items() if key != 'replay-name'}
+            encoded = json.dumps(canonical, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
         return event_id, hashlib.sha256(encoded).hexdigest(), kind, buyer, agreement_id, license_arn, cutoff, current
 
     def apply(self, event, now):
