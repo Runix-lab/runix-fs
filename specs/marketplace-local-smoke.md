@@ -205,3 +205,92 @@ their unique invocation resources, delete the temporary credential file and
 preserve unrelated service/network names. Combined Python suite: 61 passed.
 Shell syntax, Python compilation and provenance checks also pass. These do not
 replace the real integration run or prove AWS account-level tenant isolation.
+
+## Two-boundary local verification contract, 2026-10-29
+
+Add a repeatable local-only runner using the already cached immutable images and
+read-only engine build volume. Create two new internal Docker networks, each
+with an independent synthetic object store, private credentials, evidence
+folder and engine state. Reuse the existing actual CLI write/read/SIGKILL/restart
+script for each boundary. Both stores must be running and independently seeded
+before network probes. Verify own-store access succeeds, peer store IP access
+fails in both directions, and the peer's valid credentials cannot read objects
+from the local store even when the network path is reachable. Compare hashes to
+prove identical object paths contain different independent payloads.
+
+No host ports, image pulls, host Docker socket inside containers, shared engine
+state, cloud credentials, AWS calls or customer data. Run engines sequentially
+to bound local memory; stores coexist for isolation probes. Use unique invocation
+resource names, 0700 runtime folders, 0600 temporary credential files, bounded
+subprocess timeouts, and cleanup in failure paths. Verify owned resources are
+gone using successful fresh Docker inventory commands; cleanup errors must fail
+the test instead of printing success. Preserve unrelated resources and retain
+only local synthetic payloads/private logs, never commit runtime state/secrets.
+
+Unit tests must cover Docker start, engine/probe failure, cleanup failure and
+scoped removal. A real integration run must separately record actual hashes,
+results and cleanup. This is evidence about Docker deployment boundaries only:
+not AWS IAM/VPC isolation, shared-cluster authorization, quotas, FUSE, SSO,
+Marketplace activation or a production service. No public launch follows.
+
+### Actual two-boundary result, 2026-10-29
+
+**Passed twice locally**, with the final run using a separate peer-credential
+probe file: peer credentials never enter the engine or object-store environment.
+Both stores were alive and independently seeded before probing; each engine ran
+sequentially in its own boundary. Each passed actual S3-compatible read,
+write-through, simultaneous master/worker SIGKILL, restart without formatting,
+byte comparisons and an independent SDK read of its uploaded object. Own-store
+positive controls passed; peer-IP TCP connections failed in both directions;
+using the other store's credentials against the reachable local endpoint returned
+an explicit 403 authorization error. Same bucket/key names contained independent
+random payloads. This is not a shared service or an organization-authz test.
+
+Final run payloads (4,194,304 bytes each):
+
+| Boundary | Seed/read-before/read-after SHA-256 | Upload/direct-S3/recovered SHA-256 |
+| --- | --- | --- |
+| A | `b89af1cae4ff67675c8c2f6d2ddd3a41a104378952495772e48b1c05cd8b44be` | `5c196d7ce8e644bedafed6b085aa78c3bdba284ce63ebc97cdd549d20d5478ac` |
+| B | `5c5a551db3ae2cc2c5b0c9044a1d45b7b959bba61cd1b526a1821f95e7d46d2f` | `a87011429f559da9ac13a6044fd20a662fc924b579798c3269dc43ea449cc540` |
+
+Both used the previously WAL-repaired server hash
+`707497ccfd450d5c7f6c252230819d0c4a9297328d74207b44f2bc2f4c640914`
+and CLI hash
+`f1f517005f18b5157c017d1759b0c5448a1efac9da3babc12a1f5b9f3f50dd12`.
+No engine source changed or rebuilt during this step. These are not fresh
+release artifacts for the latest control-plane commit.
+
+Actual running-engine inspection confirmed no peer-credential environment,
+HostConfig.PortBindings={}, Privileged=false and read-only /build volume.
+Successful post-test Docker inventories independently confirmed zero remaining
+runix-tenant-smoke containers or networks. Both temporary credential/probe files
+were gone. Existing unrelated services were preserved. No AWS resource, public
+listener, Marketplace subscription or metering request was created.
+
+Final private evidence (not committed):
+`/var/folders/2x/cb5tfqrd52x2ddhb39yfn35w0000gn/T/runix-tenant-smoke-0hmv2kzn/`.
+Initial passing run before separating peer credentials:
+`/var/folders/2x/cb5tfqrd52x2ddhb39yfn35w0000gn/T/runix-tenant-smoke-_d8f6niu/`.
+Payloads, raw logs and test mount configuration remain private synthetic runtime
+state. Temporary credentials are inert after store removal, never AWS secrets.
+
+Reproduce with the existing SDK environment and cached images:
+
+```sh
+/tmp/runix-marketplace-verify-20261028/bin/python scripts/runix/local_tenant_smoke.py \
+  --sdk-dir /private/tmp/runix-marketplace-verify-20261028/lib/python3.14/site-packages
+```
+
+Final runner SHA-256:
+`7c7fa5ef90745fea741f85598afbe0550f739828fdda72118b8faca349253db7`;
+probe SHA-256:
+`91077e71e5e1d9e11e18277c60fde6ea80878a82e007a0d7e85b8bf6b82f63f7`.
+Ten new unit tests cover orchestration cleanup failures, resource scoping,
+credential handoff, positive/negative controls and rejection of infrastructure
+errors as authorization proof. Combined Python suite: **178 passed locally**.
+A test-only mock response iterator initially exhausted across subcases; reset
+per subcase and rerun successfully. No runtime integration failure was hidden.
+
+This does not establish AWS VPC/IAM isolation, production organization access,
+license activation, hard quotas, FUSE, HA, restore-from-backup, public login or
+Marketplace buyer delivery. Those remain required release gates.

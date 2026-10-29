@@ -329,3 +329,43 @@ Remote verification: implementation commit
 with **success**, confirmed with `gh run watch --exit-status`:
 https://github.com/Runix-lab/runix-fs/actions/runs/40812595351
 This is source/CI verification, not seller API access or public delivery evidence.
+
+## 2026-10-29 — real independent local delivery boundaries
+
+Previous goal turn was progress: seller agreement adapter/ARN repair committed,
+pushed and verified in CI. This turn advances the actual engine deployment
+boundary within the owner's local/draft-only instruction; no production budget
+or paid purchase authorization was inferred from the general launch objective.
+
+Docker initially reported the daemon unavailable. Existing Docker Desktop start
+command returned already running, and subsequent `docker info` verified Linux
+28.5.1. Used only already cached immutable images and existing read-only build
+volume. No package/image installation or existing service modification occurred.
+
+Added repeatable local_tenant_smoke.py and local_tenant_probe.py plus 10 fault/
+negative-control tests. Two fresh internal networks, independent stores, distinct
+credentials/state/payloads, no published ports. Actual read/write/write-through
+and crash/restart comparison passed for both boundaries. Both peer-network and
+foreign-credential probes denied access while positive own-store controls passed.
+Final run also inspected the real engine: no peer credentials, no host port
+bindings, no privilege, read-only build volume. All owned containers/networks
+were confirmed removed by fresh inventories; unrelated services preserved.
+
+Two actual runs passed; the final one separated peer credentials into a probe-
+only file, never engine/store environment. Full hashes, private evidence paths,
+reproduction command, unit-test correction and limitations are documented in
+marketplace-local-smoke.md. Runtime files/credentials are excluded from Git.
+All **178 Python tests pass locally**; new scripts compile, provenance checks and
+whitespace checks pass. No new Rust source or binary build is claimed.
+
+This is local deployment/network/storage-boundary evidence, not production SaaS
+isolation or AWS buyer testing. Still no public registration endpoint, real IdP,
+positive license activation, cluster provisioner, authoritative usage collector,
+hard quotas or deployed lifecycle transport. Latest actual AWS state remains
+unrefreshed after browser timeouts; last confirmed product is Staging. No new
+ChangeSet, fulfillment configuration, price dimension, public review or listing.
+
+The earlier documentation-only commit d979297 remains local after repeated
+GitHub HTTPS connection failures. Retry pushing the combined new commits after
+local verification; record actual remote result separately. This is a transport
+failure, not a reason to rewrite/force-push the work branch or claim publication.
