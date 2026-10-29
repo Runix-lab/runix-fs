@@ -461,3 +461,11 @@ Real EventBridge/SQS origin and IAM, missing-event reconciliation, IdP/browser
 login, resource provisioning/revocation, source usage, hard quota, final metering,
 production budget and buyer verification remain gates. The last confirmed AWS
 product state remains Staging, unrefreshed. No new ChangeSet or public buyer URL.
+
+Implementation commit `be8bc25dbfe59450d15b7c417c1314533d1ab2c5` was pushed
+normally to codex/marketplace-saas-integration. GitHub Actions run **40817081688**
+for that exact SHA completed with **success**:
+https://github.com/Runix-lab/runix-fs/actions/runs/40817081688
+Read-only workflow listing confirmed the completed status and matching SHA.
+This is local/CI verification of synthetic event and SDK-model scenarios, not
+real seller transport, paid activation, provisioning or Marketplace publication.
