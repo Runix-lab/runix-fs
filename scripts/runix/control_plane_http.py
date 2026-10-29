@@ -16,14 +16,10 @@ from wsgiref.simple_server import WSGIRequestHandler, make_server
 import boto3
 
 from control_plane_auth import AccessTokenVerifier
+from control_plane_errors import HttpError
 from marketplace_adapter import MarketplaceDenied, MarketplaceUnavailable, RegistrationGateway
 from marketplace_metering import MeteringConflict, MeteringOutbox
 from marketplace_registration import RegistrationRegistry
-
-
-class HttpError(Exception):
-    def __init__(self, status, code):
-        self.status, self.code = status, code
 
 
 def unique_object(pairs):
@@ -203,7 +199,7 @@ def main():
             raise ValueError('Config too large')
         config = json.loads(raw, object_pairs_hook=unique_object)
         expected = {'database', 'seller_account', 'product_code', 'issuer', 'audience', 'client_ids', 'jwks', 'public_origin'}
-        if set(config) != expected or not 1 <= args.port <= 65535:
+        if set(config) not in (expected, expected | {'browser'}) or not 1 <= args.port <= 65535:
             raise ValueError('Invalid fixed configuration')
         verifier = AccessTokenVerifier(config['issuer'], config['audience'], config['client_ids'], config['jwks'])
         for name in ('botocore', 'boto3', 'urllib3'):
@@ -211,6 +207,9 @@ def main():
         gateway = RegistrationGateway.from_session(boto3.Session(), config['seller_account'], config['product_code'])
         app = ControlPlaneApp(config['database'], config['seller_account'], config['product_code'], verifier,
                               config['public_origin'], gateway)
+        if 'browser' in config:
+            from control_plane_browser import from_config
+            app = from_config(app, config['browser'])
         with make_server('127.0.0.1', args.port, app, handler_class=QuietRequestHandler) as server:
             print('Local control-plane API listening on loopback; commercial delivery is not ready.', flush=True)
             server.serve_forever()

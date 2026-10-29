@@ -205,23 +205,27 @@ class OidcFlow:
                 state TEXT PRIMARY KEY, browser TEXT NOT NULL, verifier TEXT,
                 nonce TEXT NOT NULL, issued INTEGER NOT NULL, expires INTEGER NOT NULL,
                 consumed INTEGER)''')
+            if 'context' not in {row['name'] for row in store.db.execute('PRAGMA table_info(oidc_states)')}:
+                store.db.execute('ALTER TABLE oidc_states ADD COLUMN context TEXT')
 
-    def begin(self, browser_secret, now):
+    def begin(self, browser_secret, now, *, context=None):
         if not isinstance(browser_secret, str) or not SECRET.fullmatch(browser_secret):
             raise MarketplaceDenied(DENIED)
+        if context is not None and (not isinstance(context, str) or not re.fullmatch(r'[0-9a-f]{64}', context)):
+            raise ValueError('Opaque context digest required')
         stamp = instant(now)
         state, nonce, verifier = (secrets.token_urlsafe(32) for _ in range(3))
         with self.store.transaction():
             # Bound credential lifetime on disk, also after abandoned sign-ins.
             self.store.db.execute('DELETE FROM oidc_states WHERE expires<=?', (stamp,))
-            self.store.db.execute('INSERT INTO oidc_states VALUES(?,?,?,?,?,?,NULL)',
-                (digest(state), digest(browser_secret), verifier, digest(nonce), stamp, stamp + 600))
+            self.store.db.execute('INSERT INTO oidc_states(state,browser,verifier,nonce,issued,expires,context) VALUES(?,?,?,?,?,?,?)',
+                (digest(state), digest(browser_secret), verifier, digest(nonce), stamp, stamp + 600, context))
         query = urlencode({'response_type': 'code', 'client_id': self.provider.client_id,
             'redirect_uri': self.provider.redirect_uri, 'scope': 'openid', 'state': state,
             'nonce': nonce, 'code_challenge': s256(verifier), 'code_challenge_method': 'S256'})
         return LoginStart(self.provider.authorization_endpoint + '?' + query, state)
 
-    def complete(self, state, browser_secret, now, *, code=None, error=None, clock=None):
+    def complete(self, state, browser_secret, now, *, code=None, error=None, clock=None, context=None):
         if self.store.db.in_transaction:
             raise RuntimeError('OIDC callback requires an independent transaction')
         if (not isinstance(state, str) or not SECRET.fullmatch(state)
@@ -237,7 +241,8 @@ class OidcFlow:
             self.store.db.execute('UPDATE oidc_states SET consumed=?,verifier=NULL WHERE state=?', (stamp, digest(state)))
         # Any callback after matching state is terminal, including provider error
         # or ambiguous code. A lost/uncertain exchange starts a new login instead.
-        if error is not None or not bounded_text(code, 4096):
+        if (error is not None or not bounded_text(code, 4096)
+                or context != row['context']):
             raise MarketplaceDenied(DENIED)
         token, access_token = self.token_client.exchange(code, verifier)
         current = clock() if clock is not None else datetime.now(timezone.utc).replace(microsecond=0)

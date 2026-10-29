@@ -19,8 +19,8 @@ Return the claim only to the future secure registration frontend; TTL <=15min.
 
 Binding requires a principal from **verified future authentication middleware**
 and an owner/admin membership in the chosen Runix organization. Memberships are
-durable and revocable; no buyer can assign themselves membership through this
-module. Operator membership management is an internal bootstrap interface,
+durable and revocable; no buyer can assign arbitrary memberships through this
+module. The later narrow personal-workspace exception is documented below. Operator membership management is an internal bootstrap interface,
 not a public HTTP route. The principal structure merely carries the verified
 issuer/subject and expiry; constructing it does not verify a JWT or authenticate
 a real user. A fixed configured issuer, nonempty subject and unexpired context
@@ -88,3 +88,18 @@ licenses or provisioning results. The registry can serve existing authenticated
 organization reads without a registration gateway; attempting to register while
 that gateway is unavailable fails with 503 through the HTTP layer. Actual browser
 SSO, live seller calls and customer resource creation are still unverified.
+
+## Authenticated personal workspace and browser wrapper, 2026-10-29
+
+create_personal_organization verifies the authenticated subject and creates at
+most one server-generated organization plus its owner membership in one write
+transaction. It takes no buyer-selected organization, subject or role. Repeated
+and concurrent calls reuse the workspace; a revoked or member-only mapping is
+never repaired to owner. Existing memberships need no migration/backfill. This
+is account metadata only, never a cluster, active license or legal entity.
+
+The local browser wrapper now supplies verified OIDC identity, private sessions,
+CSRF forms and a claim-in-HttpOnly-cookie handoff. See control-plane-browser.md.
+The existing signed-Bearer API and operator arbitrary membership administration
+are unchanged. Production identity setup, public TLS and buyer delivery are still
+unverified; no bare API or local UI is submitted as the fulfillment URL.

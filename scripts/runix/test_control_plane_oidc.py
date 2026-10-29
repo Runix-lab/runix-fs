@@ -277,6 +277,27 @@ flow.complete(sys.argv[2],sys.argv[3],datetime(2026,10,29,6,tzinfo=timezone.utc)
         with self.assertRaises(ValueError):
             OidcFlow(self.store, CONFIG, Mock(provider=changed), self.client)
 
+    def test_legacy_state_schema_upgrade_preserves_unconsumed_login(self):
+        self.store.db.execute('ALTER TABLE oidc_states RENAME TO old_oidc_states')
+        self.store.db.execute("""CREATE TABLE oidc_states (
+            state TEXT PRIMARY KEY,browser TEXT NOT NULL,verifier TEXT,
+            nonce TEXT NOT NULL,issued INTEGER NOT NULL,expires INTEGER NOT NULL,consumed INTEGER)""")
+        self.store.db.execute('INSERT INTO oidc_states SELECT state,browser,verifier,nonce,issued,expires,consumed FROM old_oidc_states')
+        self.store.db.execute('DROP TABLE old_oidc_states')
+        self.flow = OidcFlow(self.store, CONFIG, self.verifier, self.client)
+        self.assertIsNone(self.store.db.execute('SELECT context FROM oidc_states').fetchone()[0])
+        self.complete()
+
+    def test_pending_context_mismatch_consumes_without_token_exchange(self):
+        start = self.flow.begin(self.browser, NOW, context=digest('original-claim'))
+        with self.assertRaises(MarketplaceDenied):
+            self.complete(state=start.state, context=digest('substituted-claim'))
+        self.client.exchange.assert_not_called()
+        row = self.store.db.execute('SELECT consumed,verifier FROM oidc_states WHERE state=?', (digest(start.state),)).fetchone()
+        self.assertEqual(tuple(row), (int(NOW.timestamp()), None))
+        with self.assertRaises(ValueError):
+            self.flow.begin(self.browser, NOW, context='raw-claim')
+
     def test_expired_state_pruned_on_new_login(self):
         self.flow.begin(self.browser, NOW + timedelta(seconds=600))
         self.assertEqual(self.store.db.execute('SELECT count(*) FROM oidc_states').fetchone()[0], 1)

@@ -63,3 +63,10 @@ signatures and SDK Stubber, not actual Marketplace buyers. No route in the table
 above is deployed or ready as a public Marketplace fulfillment URL. Browser
 account setup, provider configuration, positive activation and provisioning
 remain mandatory gates.
+
+Local account frontend progress, 2026-10-29: control-plane-browser.md describes
+an actual server-rendered account/session/organization/pending-purchase flow,
+using the original logo and fixed local CSS. No production identity/client,
+service URL or website navigation was deployed. Do not link the website to a
+temporary test server or use it as a public Marketplace fulfillment URL. The
+separate dirty website source is untouched.

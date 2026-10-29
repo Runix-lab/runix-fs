@@ -64,6 +64,21 @@ class RegistrationRegistry:
             self.db.execute('''CREATE TABLE IF NOT EXISTS provisioning_intents (
                 id TEXT PRIMARY KEY, license TEXT NOT NULL UNIQUE, org TEXT NOT NULL,
                 state TEXT NOT NULL CHECK(state='pending_license_verification'))''')
+            self.db.execute('''CREATE TABLE IF NOT EXISTS personal_organizations (
+                subject TEXT PRIMARY KEY, org TEXT NOT NULL UNIQUE, created INTEGER NOT NULL)''')
+
+    def create_personal_organization(self, principal, now):
+        """Authenticated metadata-only workspace, one per subject; no role repair."""
+        with self.outbox.transaction():
+            subject = self._authenticated_subject(principal, now)
+            row = self.db.execute('SELECT org FROM personal_organizations WHERE subject=?', (subject,)).fetchone()
+            if row is not None:
+                self._authorize(principal, row['org'], now, admin=True)
+                return row['org']
+            org = 'org-' + uuid.uuid4().hex
+            self.db.execute('INSERT INTO personal_organizations VALUES(?,?,?)', (subject, org, instant(now)))
+            self.db.execute('INSERT INTO org_memberships VALUES(?,?,?)', (org, subject, 'owner'))
+            return org
 
     def set_membership(self, org, subject, role):
         """Trusted operator bootstrap/revocation, never an unauthenticated route."""

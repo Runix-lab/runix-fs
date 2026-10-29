@@ -49,6 +49,19 @@ Implementation `7088fac577b3723077added3f7d6357439023ff4` passed GitHub Actions
 actual completed success for both migration and Linux fault-runtime subset jobs.
 The real local IdP protocol smoke is separate from CI's unit/source checks.
 
+## 2026-10-29 browser account and session evidence
+
+Added the optional browser account wrapper, durable session/CSRF handling,
+metadata-only personal organizations and registration-cookie binding. **329
+Python tests pass locally**, including 46 new tests in this increment. Real
+RSA verification, actual loopback TCP/WSGI request cycles, transaction/crash/
+replay/race checks and original-logo visual rendering are verified locally.
+The real Casdoor protocol smoke also passed again with all owned resources
+removed. See [Browser account](control-plane-browser.md) for precise fixture
+boundaries, screenshot/evidence locations and the remaining production gates.
+No actual browser/production IdP login, paid buyer purchase, public service,
+cloud deployment or Marketplace publication is established by these checks.
+
 ## Original migration evidence
 
 Date: 2026-10-21 (America/Los_Angeles).

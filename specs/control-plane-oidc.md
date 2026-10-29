@@ -100,3 +100,10 @@ change. A consumed code was retried with its original correct PKCE verifier
 and refused; the separate fresh-code negative case used a wrong verifier.
 `cleanup-result.json` records zero owned containers/networks and removal of the
 secret environment file after actual Docker inventory checks.
+
+Subsequent local browser implementation is tracked in control-plane-browser.md.
+OIDC state now supports an optional fixed opaque context digest for the pending
+purchase; migration preserves old context-free states, while context substitution
+consumes and denies the callback before token exchange. The provider protocol
+smoke was re-run successfully after that migration. Production SSO and actual
+browser-to-provider end-to-end verification remain outstanding.

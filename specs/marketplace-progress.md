@@ -578,3 +578,57 @@ subset jobs both succeeded:
 https://github.com/Runix-lab/runix-fs/actions/runs/40824991106
 The disposable real-provider protocol smoke was local; CI runs unit/source
 checks and does not deploy Casdoor, Runix SaaS or Marketplace infrastructure.
+
+## 2026-10-29 — local browser account/session and pending binding
+
+Previous goal turn made concrete progress: actual OIDC protocol implementation,
+7088fac and successful CI 40824991106, followed by evidence commit 5401543.
+Continued local/draft scope; no paid cloud resource or production IdP was created.
+
+Implemented optional BrowserAccountApp around the existing API: signed OIDC code/
+PKCE callback, durable opaque sessions, session-bound CSRF, fixed cookie policy,
+logout/rotation, server-rendered organizations/purchase states, original Runix logo
+and local responsive CSS. API routes still require Bearer signatures. Production
+HTTPS uses __Host-/Secure/HttpOnly/Path=/ and SameSite=Lax; explicit loopback tests
+use separate local cookie names. No request chooses a provider or return URL.
+Secrets are private operator files, not inline config or source. The runner now
+loads this optional wrapper; shared HTTP error extraction also works under the
+actual __main__ entrypoint without mismatched exception classes.
+
+Added narrow authenticated metadata-only personal workspace creation: one server-
+generated organization per subject, no caller-selected identity/role/org ID,
+transactional owner creation and no restoration of a revoked membership. No
+cluster, AWS resource, hard quota or billable access is created. The browser
+registration callback requires the real configured resolver, keeps its opaque
+claim in an HttpOnly cookie, clears old browser credentials and requires fresh
+login. An optional context digest is pinned across OIDC and session state; swaps
+or removal deny callback. Purchase binding/context clear commit atomically.
+
+Added 44 browser/session/organization tests plus 2 OIDC context/migration tests.
+All **329 Python tests pass locally** plus provenance, compilation and whitespace
+checks. Tests include real RSA callback signatures, actual TCP/WSGI cookie round
+trips, auth/Origin/CSRF/duplicate input validation, scoped reads, revocation,
+logout-vs-mutation races, concurrency, SQL rollback and real process exit/restart.
+The buyer resolver and IdP HTTP token responses in these unit tests are synthetic;
+they do not establish a real purchase or actual browser/provider SSO.
+
+Actual visual QA opened the logged-out account page in the in-app browser; logo,
+CSS and layout rendered. Screenshot outside Git is recorded in the browser spec.
+A first fixture correctly rejected reusing an origin-pinned DB under a different
+origin; a fresh DB rendered successfully. Both temporary listeners were stopped
+and checked gone. No temporary address is presented as a live service.
+
+The separate actual cached Casdoor protocol smoke passed again after schema
+migration: real code/S256/signed ID token, fresh-code wrong verifier, redeemed-
+code original verifier and callback replay checks; all owned Docker resources
+and secret env file removed. Evidence (nonsecret metadata/results only):
+/var/folders/2x/cb5tfqrd52x2ddhb39yfn35w0000gn/T/runix-oidc-smoke-2d5wo7t3/
+Existing identity services, dirty website source and unrelated containers were
+not modified. Sensitive runtime data remains outside Git.
+
+Remaining gates: operator-approved real HTTPS IdP/client, actual browser SSO,
+independent security review, vetted deployment/logging/abuse controls, operational
+resource provision/revoke, hard quota and source usage, missed-event/final-metering
+reconciliation, approved production budget and real buyer delivery/visibility.
+Last confirmed product remains Staging, unrefreshed. No new ChangeSet, configured
+price, fulfillment URL, review submission or buyer-visible service was obtained.

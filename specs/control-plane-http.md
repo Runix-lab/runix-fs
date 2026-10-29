@@ -88,3 +88,13 @@ Marketplace fulfillment endpoint.
 
 SDK timeout reference checked against the installed service model/config:
 https://docs.aws.amazon.com/botocore/latest/reference/config.html.
+
+## Optional local browser wrapper, 2026-10-29
+
+BrowserAccountApp adds the separately specified /account routes and a 303
+registration-cookie handoff when explicitly configured. The standalone API's
+JSON routes and signed-Bearer authorization are unchanged. See
+[Browser account](control-plane-browser.md) for implemented local tests, cookie/
+CSRF behavior, private secret-file configuration and unimplemented production
+gates. The runner now accepts that optional browser object; it still requires
+verified AWS identity and binds only loopback. /health/ready remains 503.
