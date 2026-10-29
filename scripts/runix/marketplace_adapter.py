@@ -31,7 +31,7 @@ def validate_purchase(purchase, expected_product):
         or not re.fullmatch(r"[0-9]{12}", purchase.account_id)
         or not isinstance(purchase.license_arn, str)
         or not re.fullmatch(
-            r"arn:aws:license-manager:[a-z0-9-]*:[0-9]{12}:license:[A-Za-z0-9-]+",
+            r"arn:aws:license-manager:[a-z0-9-]*:[0-9]{12}:license[:/][A-Za-z0-9-]+",
             purchase.license_arn,
         )
         or purchase.product_code != expected_product

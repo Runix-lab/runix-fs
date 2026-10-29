@@ -18,6 +18,7 @@ implementation and verification evidence.
 | [Access-token verification](control-plane-auth.md) | Actual RSA access-token verification and the remaining identity-provider/browser-login setup |
 | [Control-plane HTTP](control-plane-http.md) | Real local API routes, signed identities, registration handoff and tested readiness limits |
 | [Negative lifecycle events](marketplace-lifecycle.md) | Durable stop guards, held final usage, event replay and live-transport limitations |
+| [Agreement evidence](marketplace-agreement.md) | Read-only seller agreement identity/status checks and unresolved positive license verification |
 | [Gateway research](marketplace-gateway-research.md) | Verified AI/API gateway listings and future product packaging, separate from FS launch |
 | [Local engine smoke](marketplace-local-smoke.md) | Write/read, historical crash failure, WAL fix, local S3-compatible write-through and recovery evidence |
 | [Website](website-integration.md) | Public website and future authenticated console integration |

@@ -64,6 +64,17 @@ class NegativeLifecycleTests(unittest.TestCase):
     def enqueue(self, purchase=PURCHASE, quantity=2):
         return self.box.enqueue(purchase, DIMENSION, START, quantity, NOW)
 
+    def test_slash_license_stop_preserves_identity_and_replay_guard(self):
+        purchase = dataclasses.replace(PURCHASE,
+            license_arn='arn:aws:license-manager::999999999999:license/lic-synthetic')
+        key = self.enqueue(purchase)
+        value = event(purchase, license_event=True)
+        self.assertTrue(self.reducer.apply(value, NOW))
+        self.assertFalse(self.reducer.apply(value, NOW))
+        self.assertEqual(self.box.inspect(key)['state'], 'quarantined')
+        with self.assertRaises(MarketplaceDenied):
+            self.enqueue(purchase)
+
     def registry(self):
         sts = Mock()
         sts.get_caller_identity.return_value = {'Account': SELLER}

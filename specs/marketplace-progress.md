@@ -283,3 +283,42 @@
 
 No secret, runtime usage ledger, raw registration token or customer identity
 material belongs in this log or a Git commit.
+
+## 2026-10-29 — read-only agreement evidence and ARN interoperability
+
+Continued within the owner's latest local/draft-only scope. No production or
+short-lived cloud resources, paid subscriptions, billing calls, tax/bank changes
+or legal acceptance occurred. Production budget remains declined.
+
+Found and fixed a concrete registration/lifecycle interoperability bug: the
+shared purchase validator only accepted `license:...`, while current AWS
+GetAgreementEntitlements examples also return `license/lic-...`. Both documented
+resource separators are now accepted without normalization or changing immutable
+identity bindings. Actual SDK ResolveCustomer and durable cancellation/replay
+regressions cover the slash format; malformed/foreign resource strings still fail.
+
+Added `marketplace_agreement.py`, an internal read-only DescribeAgreement adapter:
+fresh seller STS check on every read; resolved buyer/agreement identity and exact
+configured SaaS resource checks; minimal immutable status/time snapshot; sanitized
+SDK failures. Tests cover substitution, missing evidence, all known SDK statuses,
+future and elapsed windows, invalid dates, replay and concurrent reads. It has no
+HTTP exposure, activation flag, persistence, provisioning or billing side effect.
+
+Re-read current AWS primary documentation and the installed botocore 1.43.118
+models. GetAgreementEntitlements is present in marketplace-agreement and differs
+from the legacy Contract GetEntitlements API. Its current developer walkthrough
+is buyer/acceptor oriented; seller access and authoritative PAYG activation for
+this account remain unverified. DescribeAgreement ACTIVE alone is deliberately
+not treated as a provisioned license. See marketplace-agreement.md for sources,
+contract and remaining gate.
+
+Validation: all **168 Python tests pass locally**; provenance/attribution verifier
+and `git diff --check` pass. This uses SDK Stubber and synthetic identities, not
+real AWS agreement/license evidence. No new Rust/engine change in this step.
+
+Browser channel: Chrome extension enumerated existing Runix seller-page tabs,
+but the live DOM read timed out and reset its session. Tab metadata does not prove
+login or product state. No console mutation or new ChangeSet is claimed. Last
+verified product state remains Staging (`prod-xw6kihs3wveu2`); current state is not
+freshly confirmed. No public buyer page or delivered SaaS endpoint exists in the
+evidence. Fulfillment URL and price dimensions remain unconfigured as last seen.

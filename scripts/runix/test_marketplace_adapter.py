@@ -65,6 +65,15 @@ class ContractAdapterTests(unittest.TestCase):
         )
         self.assertEqual(self.gateway.resolve_registration("test-token"), PURCHASE)
 
+    def test_sdk_registration_preserves_slash_license_arn(self):
+        arn = 'arn:aws:license-manager::111111111111:license/lic-test'
+        self.stubs['meteringmarketplace'].add_response(
+            'resolve_customer', {**RESOLVED, 'LicenseArn': arn},
+            {'RegistrationToken': 'test-token'},
+        )
+        self.assertEqual(self.gateway.resolve_registration('test-token'),
+                         replace(PURCHASE, license_arn=arn))
+
     def test_wrong_seller_never_calls_marketplace(self):
         sts = Mock()
         sts.get_caller_identity.return_value = {"Account": BUYER}
