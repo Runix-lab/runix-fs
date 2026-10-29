@@ -513,3 +513,10 @@ production identity/login, resource provision/revoke, quotas/source usage,
 final billing and buyer tests remain gates. Production budget is still declined.
 Last confirmed AWS product status remains Staging, unrefreshed; no ChangeSet,
 public review, fulfillment URL, configured price or buyer-visible service added.
+
+Implementation `cc66245cd9041517ea28b4c9be3bf30c31bc63db` was pushed normally to
+codex/marketplace-saas-integration. GitHub Actions run **40819754446** for that
+exact SHA completed with **success**, confirmed from the workflow API listing:
+https://github.com/Runix-lab/runix-fs/actions/runs/40819754446
+This verifies source/unit checks. All AWS transport responses in these tests
+remain Stubber fixtures; no actual live queue/origin or public service is proven.
