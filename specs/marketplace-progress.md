@@ -520,3 +520,53 @@ exact SHA completed with **success**, confirmed from the workflow API listing:
 https://github.com/Runix-lab/runix-fs/actions/runs/40819754446
 This verifies source/unit checks. All AWS transport responses in these tests
 remain Stubber fixtures; no actual live queue/origin or public service is proven.
+
+## 2026-10-29 — real local OIDC code/PKCE foundation
+
+Continued the user's local/draft-only scope; production budget remains declined.
+No AWS resources, paid subscriptions, live metering, public endpoint or account
+changes were made. Previous event worker CI was green at 40819754446.
+
+Source discovery: public Router console actually shows username/password sign-in.
+The separate private gateway deployment repository did not establish a reusable
+OIDC issuer/client/JWKS. No proprietary gateway source, cookies or API keys were
+copied into this Apache-licensed FS repository. The dirty website repository and
+existing identity services were left untouched. Public official OIDC/Casdoor
+references and actual fixture behavior informed this new implementation.
+
+Implemented internal OIDC begin/complete with S256, nonce, browser correlation,
+private durable state and committed single consumption before token exchange.
+Provider/client/endpoints are fixed and bound to the database. Token HTTP uses
+bounded direct TLS with no redirect or automatic retry; the explicit literal
+loopback exception is only for synthetic local tests. A separate RS256 ID-token
+verifier checks actual signatures, issuer, audience/authorized-party, nonce,
+trusted time and optional code/access-token hashes. It does not turn provider
+organization/admin claims into Runix permissions. Existing API access-token
+validation stays strict and separate. No browser session or role is minted.
+
+Added 30 tests for signatures/claims/header confusion, PKCE/correlation, cross-
+browser denial, callback concurrency, transaction rollback, real process crash,
+restart/replay, delayed/failed exchange, config pinning, credential redaction
+and owned-fixture cleanup failures. All 283 Python tests pass locally, with
+provenance, compilation and whitespace checks. One adversarial test initially
+let the encoder strip its unsupported header; exact-wire signing now validates
+the actual rejection instead of relying on encoder behavior.
+
+Actual provider run (not a stub): fresh official cached Casdoor digest in
+control-plane-oidc.md; synthetic credential-to-code API request, S256 token
+exchange and actual 4096-bit RSA ID-token verification passed. A fresh code with
+wrong PKCE and a redeemed code with its original correct verifier were refused;
+local consumed callback replay was refused. Final evidence:
+/var/folders/2x/cb5tfqrd52x2ddhb39yfn35w0000gn/T/runix-oidc-smoke-1qb8plq4/
+Only metadata/results are recorded here. Passwords, codes, tokens, private keys,
+client secrets and diagnostic logs stay outside Git. Fresh inventories confirmed
+all owned containers/network removed and the secret env file deleted. No host
+port was published. Two initial host-loopback probes failed and were cleaned;
+the successful fixture uses its own isolated provider/client namespace instead.
+
+Browser HTTP handoff, cookies/CSRF/logout, organization self-service, production
+IdP configuration, provisioning/revocation, source usage/hard quota, missing-
+event reconciliation, final billing and real buyer verification remain gates.
+The existing Registry HTTPS issuer requirement has not been weakened for tests.
+Latest confirmed product remains Staging (not refreshed); no new ChangeSet,
+configured AWS price, review request or buyer-visible service was obtained.

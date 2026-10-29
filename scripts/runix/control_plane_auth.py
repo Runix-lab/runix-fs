@@ -25,6 +25,33 @@ def bounded_text(value, maximum=255):
             and value.strip() == value and all(ord(char) >= 33 for char in value))
 
 
+def load_public_keys(jwks):
+    if not isinstance(jwks, dict) or set(jwks) != {'keys'}:
+        raise ValueError('Pinned public JWKS required')
+    try:
+        encoded = json.dumps(jwks, allow_nan=False).encode('utf-8')
+    except (TypeError, ValueError):
+        raise ValueError('Invalid public JWKS') from None
+    if len(encoded) > 65536 or not isinstance(jwks['keys'], list) or not 1 <= len(jwks['keys']) <= 8:
+        raise ValueError('Bounded public key set required')
+    keys = {}
+    for raw in jwks['keys']:
+        if (not isinstance(raw, dict) or not bounded_text(raw.get('kid'), 128)
+                or raw.get('kid') in keys or raw.get('kty') != 'RSA'
+                or raw.get('alg', 'RS256') != 'RS256' or raw.get('use', 'sig') != 'sig'
+                or raw.get('key_ops', ['verify']) != ['verify']
+                or any(field in raw for field in ('d', 'p', 'q', 'dp', 'dq', 'qi', 'oth', 'jku', 'x5u'))):
+            raise ValueError('Ambiguous, private or unsupported public key')
+        try:
+            key = jwt.PyJWK.from_dict(raw, algorithm='RS256').key
+        except (jwt.PyJWTError, ValueError, TypeError):
+            raise ValueError('Invalid RSA public key') from None
+        if not isinstance(key, RSAPublicKey) or not 2048 <= key.key_size <= 4096:
+            raise ValueError('RSA signing keys must be 2048..4096 bits')
+        keys[raw['kid']] = key
+    return keys
+
+
 class AccessTokenVerifier:
     def __init__(self, issuer, audience, client_ids, jwks, required_scope='runix:fs'):
         if not isinstance(issuer, str) or len(issuer) > 2048:
@@ -39,29 +66,7 @@ class AccessTokenVerifier:
                 or not 1 <= len(client_ids) <= 16
                 or not all(bounded_text(client) for client in client_ids)):
             raise ValueError('Fixed audience, client allowlist and scope required')
-        if not isinstance(jwks, dict) or set(jwks) != {'keys'}:
-            raise ValueError('Pinned public JWKS required')
-        try:
-            encoded = json.dumps(jwks, allow_nan=False).encode('utf-8')
-        except (TypeError, ValueError):
-            raise ValueError('Invalid public JWKS') from None
-        if len(encoded) > 65536 or not isinstance(jwks['keys'], list) or not 1 <= len(jwks['keys']) <= 8:
-            raise ValueError('Bounded public key set required')
-        keys = {}
-        for raw in jwks['keys']:
-            if (not isinstance(raw, dict) or not bounded_text(raw.get('kid'), 128)
-                    or raw.get('kid') in keys or raw.get('kty') != 'RSA'
-                    or raw.get('alg', 'RS256') != 'RS256' or raw.get('use', 'sig') != 'sig'
-                    or raw.get('key_ops', ['verify']) != ['verify']
-                    or any(field in raw for field in ('d', 'p', 'q', 'dp', 'dq', 'qi', 'oth', 'jku', 'x5u'))):
-                raise ValueError('Ambiguous, private or unsupported public key')
-            try:
-                key = jwt.PyJWK.from_dict(raw, algorithm='RS256').key
-            except (jwt.PyJWTError, ValueError, TypeError):
-                raise ValueError('Invalid RSA public key') from None
-            if not isinstance(key, RSAPublicKey) or not 2048 <= key.key_size <= 4096:
-                raise ValueError('RSA signing keys must be 2048..4096 bits')
-            keys[raw['kid']] = key
+        keys = load_public_keys(jwks)
         self.issuer, self.audience = issuer, audience
         self.client_ids, self.required_scope = frozenset(client_ids), required_scope
         self.keys = keys

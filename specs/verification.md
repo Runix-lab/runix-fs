@@ -28,6 +28,22 @@ authentication, activation, collector, provisioner and production boundaries.
 No live Marketplace purchase, final-metering acceptance, public visibility or
 operational SaaS URL is established by GitHub CI.
 
+## 2026-10-29 local OIDC protocol and regression evidence
+
+New internal code/PKCE foundation and separate pinned ID-token verifier pass
+30 new tests; the complete Python suite is **283 passed**. Provenance, Python
+compilation and whitespace checks pass. Existing access-token rules remain
+unchanged and ID tokens still cannot authenticate API bearer requests.
+
+A fresh cached official Casdoor instance issued a synthetic authorization code,
+enforced S256, and returned a real signed ID token verified with its actual
+4096-bit RSA public key. Fresh-code/wrong-verifier, consumed callback and
+redeemed-code/original-verifier cases were refused. Owned Docker resources and
+secret environment file were removed and the inventories checked. See
+[OIDC login foundation](control-plane-oidc.md) for evidence and limitations.
+This does not establish browser-session safety, production SSO, public TLS,
+shared Router identity, tenant provisioning or a live Marketplace purchase.
+
 ## Original migration evidence
 
 Date: 2026-10-21 (America/Los_Angeles).
