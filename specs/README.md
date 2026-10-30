@@ -23,6 +23,7 @@ implementation and verification evidence.
 | [Agreement evidence](marketplace-agreement.md) | Read-only seller agreement identity/status checks and unresolved positive license verification |
 | [PAYG license check](marketplace-payg-license.md) | Trusted update-event records, monotone stops and fresh internal agreement checks; no deployed activation |
 | [Event queue worker](marketplace-event-worker.md) | SDK polling, pinned deployment-profile checks, durable acknowledgement and archive replay handling; not deployed |
+| [Provisioning work journal](marketplace-provisioning.md) | Durable internal slot reservations and short epoch-fenced work leases; no resource grant or provider driver |
 | [Gateway research](marketplace-gateway-research.md) | Verified AI/API gateway listings and future product packaging, separate from FS launch |
 | [Engine artifact](engine-artifact.md) | Source-pinned offline image build, non-root isolated runtime gate and actual artifact receipts; not a production release |
 | [Local engine smoke](marketplace-local-smoke.md) | Write/read, historical crash failure, WAL fix, local S3-compatible write-through and recovery evidence |

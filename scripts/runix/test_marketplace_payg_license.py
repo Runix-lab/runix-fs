@@ -100,6 +100,14 @@ class PaygLicenseTests(unittest.TestCase):
         self.assertEqual(self.box.db.execute('SELECT COUNT(*) FROM usage').fetchone()[0], 0)
         self.stub.assert_no_pending_responses()
 
+    def test_outer_write_transaction_is_rejected_before_aws_read(self):
+        intent = self.ready()
+        with patch.object(self.reader, 'describe') as read:
+            with self.box.transaction():
+                with self.assertRaises(MarketplaceUnavailable):
+                    self.check(intent)
+            read.assert_not_called()
+
     def test_registration_without_update_never_reads_agreement(self):
         intent = self.bind()
         with self.assertRaises(MarketplaceDenied):

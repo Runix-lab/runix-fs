@@ -1013,3 +1013,22 @@ authentication material. Use only redacted login-page state in future observatio
 This is an authentication boundary, not evidence that the existing product was
 removed, approved, rejected or public. Original paid-product eligibility and
 Staging records remain historical until refreshed under the correct identity.
+
+
+2026-10-30 durable provisioning work foundation: marketplace_provisioning.py now
+persists one internal operation key/slot per authenticated bound pending intent,
+pins an explicit local profile, and coordinates short random epoch-fenced leases.
+Replays, concurrency, timeout/failure and process exit do not duplicate allocations.
+Lease renewal/checks honor fresh observation/expiry after transaction acquisition;
+known cancellation immediately denies work and reconciles to stop_requested without
+claiming a cluster stopped or deleting data. Slots stay held pending real provider
+reconciliation. No active/created resource response or HTTP route was added.
+
+Thirty new journal tests plus one fresh-check outer-transaction regression pass;
+complete Python suite397passed. Separate DB connections, external-read cancellation,
+old-worker takeover, lock-wait freshness, audit rollback, cross-org identity and
+real subprocess exit are covered. No AWS call, paid resource, new usage or public
+listing/deployment was made. Provider implementation and actual resource/access
+revocation still need work; public readiness remains503 and the real AWS seller
+session/production budget are still unavailable. Independent commercial review
+and buyer tests remain outstanding. Runtime databases/tokens stay outside Git.

@@ -63,3 +63,13 @@ authenticate a real EventBridge message, exercise a real agreement, grant cloud
 access or launch a cluster. The public HTTP API continues to show the durable
 pending state. No fulfillment URL, customer license or Marketplace publication
 state was modified by implementing this component.
+
+
+Caller-transaction guard, 2026-10-30: check_pending rejects an existing outer
+transaction before making an AWS read. Its own pre/post snapshots cannot release
+an outer caller's transaction; allowing that composition would retain a write
+lock or stale snapshot during network verification. A regression test verifies
+that the agreement reader is not called. The new provisioning journal also reads
+its trusted clock after acquiring the mutation transaction, so lock waiting
+cannot extend observation freshness or revive an expired work lease. These are
+internal fencing controls, not resource creation or real license acceptance.

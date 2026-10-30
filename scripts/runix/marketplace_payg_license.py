@@ -81,6 +81,8 @@ class PaygLicenseState:
         """
         if not isinstance(intent_id, str) or not re.fullmatch(r'[0-9a-f]{32}', intent_id):
             raise MarketplaceDenied('Invalid provisioning intent identifier')
+        if self.db.in_transaction:
+            raise MarketplaceUnavailable('Fresh license checks require an outer transaction boundary')
         started = clock()
         instant(started)
         with self.outbox.transaction():

@@ -280,3 +280,15 @@ These do not constitute deployed SSO or a working managed filesystem service.
 Registration stays pending, binding stays pending license verification, and
 delivery readiness returns 503. There is no public endpoint, real IdP/client
 configuration, positive PAYG activation, cluster provisioning or buyer test.
+
+
+## Internal provisioning work journal, 2026-10-30
+
+marketplace-provisioning.md specifies the newly implemented durable local work
+reservation and epoch/lease fence. It uses current bound intents, trusted update
+records and fresh agreement checks, then rechecks stops/identity/time under its
+write transaction. Audit rollback and concurrent/crash recovery tests pass.
+This is not a provider driver: pending registration, no active resources, no
+capacity/usage grant and delivery readiness503 remain. Its allocation-slot limit
+is separate from a real storage quota and an AWS production budget. Neither
+cancellation nor failure deletes data or frees possibly occupied resource slots.
