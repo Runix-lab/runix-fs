@@ -156,3 +156,30 @@ cover failure/timeout collection and missing diagnostics. All 357 Python tests
 pass locally (28 artifact tests); real runtime recovery remains an independent
 gate. No persistent infrastructure or customer purchase is authorized by this
 local diagnostic work.
+
+
+Additional evidence, 2026-10-30: the next full pipeline was interrupted during
+native linking when the Docker connection returned unexpected EOF. The manager
+terminated with failure, no image/receipt, and after Desktop recovery its labelled
+builder was found stopped (exit137, OOMKilled=false) and removed. The shutdown
+cause was not established; this was not another engine recovery failure.
+
+A separate controlled diagnostic then ran the previously compiled source8a0d213
+binaries as UID1000 with a fresh named data volume, read-only root, capabilities
+dropped, no-new-privileges, no network/ports and read-only build-cache input.
+Their actual SHA-256 matched the earlier captured build receipt. It passed
+4 MiB write/read and simultaneous master/worker SIGKILL recovery; payload and
+both downloads hashed febb78a42081683639839debffd297bbe5cce29a50a8476a69579a3719546ce2.
+Restart replay read committed Raft index9. Synthetic logs were preserved and
+owned diagnostic container/volume removed. This is a cached-binary diagnostic,
+not a freshly built image artifact or production verification. Consequently
+non-root/named-volume failure is not deterministic, and no root cause is claimed.
+The asynchronous journal queue and startup replay delay remain candidates to
+investigate with deliberate batching/failure injection and a commit barrier test.
+Do not weaken recovery gates based on one successful repetition.
+
+Diagnostics collection commit c4b7958a5d6d7418af7dce045d55c5de1756900b was pushed;
+CI41029041908 succeeded: https://github.com/Runix-lab/runix-fs/actions/runs/41029041908.
+AWS product-tab opening still timed out through the browser extension. No fresh
+seller/account/product DOM, change request, live purchase or public visibility
+was obtained. Earlier Staging evidence remains historical. No AWS spend occurred.
