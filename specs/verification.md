@@ -62,6 +62,11 @@ boundaries, screenshot/evidence locations and the remaining production gates.
 No actual browser/production IdP login, paid buyer purchase, public service,
 cloud deployment or Marketplace publication is established by these checks.
 
+Browser implementation `bda58303cc7ffe032f1c8f156bd39a4aa7a16c86` passed GitHub
+Actions [run 40995361989](https://github.com/Runix-lab/runix-fs/actions/runs/40995361989):
+actual completed success for migration and Linux fault-runtime subset jobs.
+No production deployment or public SaaS verification occurs in this CI.
+
 ## Original migration evidence
 
 Date: 2026-10-21 (America/Los_Angeles).
