@@ -128,3 +128,22 @@ deployment evidence belongs to the website repository's publishing record.
 Website verification, deployment and publication commits belong to the separate
 website repository. The migration introduces no commercial service, production
 storage cluster, AWS listing, subscription grant or billing transaction.
+
+
+2026-10-30 journal acknowledgement repair candidate implemented: separate commit
+request channel; drain/force-flush of prior queued entries through real Raft
+commit/apply acknowledgement; no success on timeout/disconnection/failure;
+namespace guard released while waiting. Synchronous mutation RPC dispatch,
+batches and retry-cache successes all pass the same fence then recheck leader
+state. Existing serialized journal/protobuf formats and default WAL policy
+remain unchanged. Known reads/reconstructible reports are exempt; async job
+acceptance/HA are not newly claimed durable.
+
+All203 active curvine-master lib unit tests passed,0failed,1existing ignored
+large-tree benchmark. All12 new fence/order/concurrency/error/guard/RPC tests
+passed. rustfmt, migration/provenance and whitespace checks passed; captured
+source hashes match current candidate. Initial test launcher mount failures and
+readonly ../target/testing failures were fixed only in the private fixture.
+No test assertion was weakened. Test logs and runtime databases stay outside Git.
+Real newly compiled image recovery and long-batch failure-injection replay are
+still pending; no production resource, Marketplace purchase or public launch.

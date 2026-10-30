@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Runix Lab modification (2026-10-30): expose a lock-free journal commit wait.
+
 use crate::master::fs::context::ValidateAddBlock;
 use crate::master::fs::full_block_report::{FullReportProgress, FullReportTracker};
 use crate::master::fs::policy::ChooseContext;
@@ -113,6 +115,13 @@ const FULL_BLOCK_RECONCILE_THREADS: usize = 2;
 const FULL_BLOCK_RECONCILE_QUEUE_SIZE: usize = 128;
 
 impl MasterFilesystem {
+    /// Wait only after cloning the writer out of the namespace guard. Raft
+    /// apply may acquire fs_dir while the caller is waiting for its commit.
+    pub(crate) fn commit_journal(&self) -> FsResult<()> {
+        let writer = { self.fs_dir.read().journal_writer.clone() };
+        writer.commit_barrier()
+    }
+
     // Max block-report location updates applied under a single fs_dir write lock.
     const BLOCK_REPORT_WRITE_CHUNK: usize = 4096;
     // Max lost-worker block ids inspected under a single fs_dir write lock.

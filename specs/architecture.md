@@ -99,9 +99,10 @@ write/rename/delete/fsync, restart/recovery, UFS failure/retry and CSI lifecycle
 tests, then produce Runix-specific performance measurements.
 
 
-### Pending repair: acknowledged metadata journal durability
+### Repair candidate: acknowledged metadata journal durability
 
-Scope defined 2026-10-30, not implemented. A controlled local failure-injection
+Scope defined 2026-10-30; code implemented below, real image recovery pending.
+A controlled local failure-injection
 profile sets journal.writer_flush_batch_ms=60000 without changing the engine
 binaries or response checks. CLI upload and initial read of 4 MiB succeed, but
 immediate simultaneous master/worker SIGKILL restarts with committed Raft index1
@@ -141,3 +142,49 @@ long-batch failure-injection regression; repeated default-profile source-pinned
 non-root image write/read and master/worker/both crash recovery. One green unit
 suite or cached-binary run cannot replace actual image verification. This gate
 covers process crashes, not power-loss, HA or production hard quota.
+
+
+Candidate implementation, 2026-10-30 (native unit verification passed; actual
+image recovery still pending): JournalWriter
+sends commit requests on a separate unbounded control channel. They cannot
+consume bounded entry-queue slots while Raft apply emits progress records.
+The sender polls at most10ms, drains entries handed off before the request,
+forces the partial batch through the existing actual Raft commit/apply response,
+and then acknowledges. Failed proposals retain the batch and fail the waiter;
+expired waiters cannot resurrect a completed error response. Empty fences add
+no journal/protobuf entry. Testing-only drains explicitly reject pending commit
+requests instead of simulating a successful Raft commit.
+
+MasterFilesystem clones the writer and releases fs_dir before waiting. The
+synchronous RPC dispatch applies the fence after business handlers, including
+retry-cache hits and partial-success batches, then checks leadership again.
+Known reads/reconstructible worker reports are exempt; unclassified new sync
+codes conservatively require a fence. OpenFile is fenced even for read-only
+opens because the same RPC also supports reopen/overwrite. This can add up to
+the10ms control polling interval to an otherwise empty open; no performance
+claim is made. Asynchronous job acceptance and worker-location reconstruction
+are not newly claimed durable by this repair. Existing bounded-entry queue
+backpressure and HA behavior still require their separate integration gates.
+
+Twelve new Rust tests exercise forced partial batches/order, failed/empty/
+expired acknowledgements, explicit testing/disabled policies, concurrent fences
+with bounded entry capacity, released namespace guard, mutation/retry inventory,
+validation/NotLeader errors and known read/report exemptions. Native execution
+uses a private independent Git clone plus only the four candidate source files,
+read-only source and a fresh tmpfs testing directory. The first launcher failed
+to mount a nonexistent testing mountpoint under a read-only root; it executed no
+Rust tests. The corrected native compilation is running; no passing result is
+claimed yet. A future passing unit suite alone will not validate real recovery.
+
+
+Native verification completed 2026-10-30: all203 active curvine-master lib tests
+passed (0failed,1existing ignored bench_create_tree_large), including all12 new
+commit-fence tests. rustfmt --check passed for the four changed source files;
+the post-run source hashes matched the candidate exactly. The first corrected
+launcher ran33 selected tests:25passed,8failed with Read-only file system because
+change_test_meta_dir uses ../target/testing, in addition to Utils' ../testing.
+Providing both fresh tmpfs mountpoints resolved those fixture failures. The
+full203-pass run used the same code except removal of one unused test import.
+No failing engine assertion was suppressed and no durability test was ignored.
+Migration/provenance and whitespace checks passed. Native unit results do not
+constitute a passing process-crash/image/HA or commercial-delivery gate.

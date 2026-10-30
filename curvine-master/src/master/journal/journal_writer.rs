@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Runix Lab modification (2026-10-30): add explicit commit-fence requests.
+
 #![allow(clippy::result_large_err)]
 
 use crate::master::journal::*;
@@ -28,11 +30,15 @@ use curvine_runtime::common::{FileUtils, LocalTime};
 use curvine_runtime::sync::channel::{BlockingChannel, BlockingReceiver, BlockingSender};
 use curvine_runtime::sync::AtomicCounter;
 use log::{debug, info, warn};
-use std::sync::Mutex;
+use std::sync::{mpsc, Mutex};
+use std::time::Duration;
 
 // Write metadata operation logs.
 pub struct JournalWriter {
     enable: bool,
+    commit_sender: mpsc::Sender<mpsc::Sender<FsResult<()>>>,
+    commit_receiver: Option<Mutex<mpsc::Receiver<mpsc::Sender<FsResult<()>>>>>,
+    commit_timeout: Duration,
     node_id: u64,
     sender: BlockingSender<JournalEntry>,
     metrics: &'static MasterMetrics,
@@ -51,17 +57,24 @@ impl JournalWriter {
         let metrics = Master::get_metrics()?;
         let (sender, receiver) = BlockingChannel::new(conf.writer_channel_size).split();
 
-        let receiver = if !testing {
+        let (commit_sender, commit_receiver) = mpsc::channel();
+        let (receiver, commit_receiver) = if !testing {
             // Start the send log thread.
             let task = SenderTask::new(client, conf, 0)?;
-            task.spawn(receiver)?;
-            None
+            task.spawn(receiver, commit_receiver)?;
+            (None, None)
         } else {
-            Some(Mutex::new(receiver))
+            (
+                Some(Mutex::new(receiver)),
+                Some(Mutex::new(commit_receiver)),
+            )
         };
 
         Ok(Self {
             enable: conf.enable,
+            commit_sender,
+            commit_receiver,
+            commit_timeout: Duration::from_millis(conf.io_timeout_ms.max(1)),
             node_id,
             sender,
             metrics,
@@ -72,6 +85,24 @@ impl JournalWriter {
             last_snapshot_ms: AtomicCounter::new(0),
             entries_since_snapshot: AtomicCounter::new(0),
         })
+    }
+
+    /// Called only after dropping metadata/worker guards. Test-mode writers
+    /// require an explicit receiver too; they never fabricate a commit.
+    pub(crate) fn commit_barrier(&self) -> FsResult<()> {
+        self.commit_barrier_timeout(self.commit_timeout)
+    }
+
+    fn commit_barrier_timeout(&self, timeout: Duration) -> FsResult<()> {
+        if !self.enable {
+            return Ok(());
+        }
+        let (ack, result) = mpsc::channel();
+        self.commit_sender.send(ack)?;
+        match result.recv_timeout(timeout) {
+            Ok(result) => result,
+            Err(error) => err_box!("journal commit barrier was not acknowledged: {}", error),
+        }
     }
 
     fn send_inner(&self, entry: JournalEntry) -> FsResult<()> {
@@ -389,6 +420,15 @@ impl JournalWriter {
 
     // for testing
     pub fn take_entries(&self) -> Vec<JournalEntry> {
+        if let Some(commits) = &self.commit_receiver {
+            if let Ok(commits) = commits.try_lock() {
+                while let Ok(ack) = commits.try_recv() {
+                    let _ = ack.send(Err(curvine_error::FsError::common(
+                        "testing receiver has no Raft commit",
+                    )));
+                }
+            }
+        }
         let mut entries = vec![];
         let Some(receiver) = self.receiver.as_ref() else {
             return entries;
@@ -661,6 +701,124 @@ mod tests {
         writer.maybe_emit_snapshot(&fs_dir)?;
         assert_eq!(checkpoint_dirs(&conf).len(), 2);
 
+        Ok(())
+    }
+
+    #[test]
+    fn commit_barrier_waits_for_receiver_and_rejects_failed_or_missing_ack() -> FsResult<()> {
+        for fail in [false, true] {
+            let conf = test_conf("commit_barrier_ack");
+            let writer = Arc::new(build_writer(&conf)?);
+            let commits = writer.commit_receiver.as_ref().unwrap().lock().unwrap();
+            let (done, result) = mpsc::channel();
+            let caller = writer.clone();
+            let thread = std::thread::spawn(move || {
+                done.send(caller.commit_barrier()).unwrap();
+            });
+            let ack = commits.recv_timeout(Duration::from_secs(2)).unwrap();
+            assert!(matches!(result.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            if fail {
+                ack.send(Err(curvine_error::FsError::common("commit failed")))
+                    .unwrap();
+            } else {
+                ack.send(Ok(())).unwrap();
+            }
+            assert_eq!(
+                result
+                    .recv_timeout(Duration::from_secs(2))
+                    .unwrap()
+                    .is_err(),
+                fail
+            );
+            thread.join().unwrap();
+        }
+        let mut writer = build_writer(&test_conf("commit_barrier_disconnected"))?;
+        drop(writer.commit_receiver.take());
+        assert!(writer.commit_barrier().is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn commit_barrier_timeout_testing_and_disabled_policies_are_explicit() -> FsResult<()> {
+        let mut writer = build_writer(&test_conf("commit_barrier_timeout"))?;
+        assert!(writer
+            .commit_barrier_timeout(Duration::from_millis(5))
+            .is_err());
+        // A late, genuinely successful commit cannot resurrect the expired call.
+        let ack = writer
+            .commit_receiver
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .try_recv()
+            .unwrap();
+        assert!(ack.send(Ok(())).is_err());
+        writer.enable = false;
+        assert!(writer.commit_barrier().is_ok());
+        assert!(writer
+            .commit_receiver
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .try_recv()
+            .is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn concurrent_commit_requests_do_not_occupy_bounded_entry_capacity() -> FsResult<()> {
+        let writer = Arc::new(build_writer(&test_conf("commit_barrier_concurrent"))?);
+        let commits = writer.commit_receiver.as_ref().unwrap().lock().unwrap();
+        let (done, results) = mpsc::channel();
+        let mut threads = Vec::new();
+        for _ in 0..4 {
+            let writer = writer.clone();
+            let done = done.clone();
+            threads.push(std::thread::spawn(move || {
+                done.send(writer.commit_barrier()).unwrap();
+            }));
+        }
+        let acks: Vec<_> = (0..4)
+            .map(|_| commits.recv_timeout(Duration::from_secs(2)).unwrap())
+            .collect();
+        // This channel's configured entry capacity is one. Four pending fences
+        // still leave that slot free for an actual journal/progress entry.
+        writer.log_ufs_applied(1, 1, 1)?;
+        assert!(matches!(results.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        for ack in acks {
+            ack.send(Ok(())).unwrap();
+        }
+        for _ in 0..4 {
+            assert!(results
+                .recv_timeout(Duration::from_secs(2))
+                .unwrap()
+                .is_ok());
+        }
+        for thread in threads {
+            thread.join().unwrap();
+        }
+        assert_eq!(writer.take_entries().len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn journal_filesystem_commit_wait_releases_namespace_guard() -> FsResult<()> {
+        let mut conf = test_conf("journal_guard_release");
+        conf.journal.writer_channel_size = 0;
+        let fs = JournalSystem::fs_only_for_test(&conf)?;
+        let writer = fs.fs_dir.read().journal_writer.clone();
+        let commits = writer.commit_receiver.as_ref().unwrap().lock().unwrap();
+        let caller = fs.clone();
+        let thread = std::thread::spawn(move || caller.commit_journal());
+        let ack = commits.recv_timeout(Duration::from_secs(2)).unwrap();
+        assert!(
+            fs.fs_dir.try_write().is_ok(),
+            "commit wait must release namespace guard"
+        );
+        ack.send(Ok(())).unwrap();
+        assert!(thread.join().unwrap().is_ok());
         Ok(())
     }
 }

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Runix Lab modification (2026-10-30): fence successful journaled mutation RPCs.
+
 use crate::master::fs::{FsRetryCache, MasterFilesystem, OperationStatus};
 use crate::master::job::JobHandler;
 use crate::master::replication::master_replication_handler::MasterReplicationHandler;
@@ -67,6 +69,48 @@ pub struct MasterHandler {
 }
 
 impl MasterHandler {
+    fn requires_journal_commit(code: RpcCode) -> bool {
+        // Default to a fence for newly introduced synchronous RPCs. Exempt
+        // only known reads and reconstructible worker/control reports.
+        !matches!(
+            code,
+            RpcCode::FileStatus
+                | RpcCode::Exists
+                | RpcCode::ListStatus
+                | RpcCode::ListOptions
+                | RpcCode::GetBlockLocations
+                | RpcCode::GetFileBlockDetails
+                | RpcCode::GetFilesystemInfo
+                | RpcCode::GetLock
+                | RpcCode::ListLock
+                | RpcCode::GetMountTable
+                | RpcCode::GetMountInfo
+                | RpcCode::MetricsReport
+                | RpcCode::WorkerHeartbeat
+                | RpcCode::WorkerBlockReport
+                | RpcCode::ReportBlockReplicationResult
+                | RpcCode::SubmitJob
+                | RpcCode::GetJobStatus
+                | RpcCode::CancelJob
+                | RpcCode::ReportTask
+                | RpcCode::GetCvMetadataSnapshotPage
+        )
+    }
+
+    fn finish_journaled_response<T>(
+        code: RpcCode,
+        response: FsResult<T>,
+        commit: impl FnOnce() -> FsResult<()>,
+        still_leader: impl FnOnce() -> FsResult<()>,
+    ) -> FsResult<T> {
+        let response = response?;
+        if Self::requires_journal_commit(code) {
+            commit()?;
+            still_leader()?;
+        }
+        Ok(response)
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         conf: &ClusterConf,
@@ -1113,6 +1157,21 @@ impl MessageHandler for MasterHandler {
             }
         };
 
+        // All business-handler guards have been dropped. Retry-cache hits and
+        // partial-success batch responses pass through the same commit fence.
+        let response = Self::finish_journaled_response(
+            code,
+            response,
+            || self.fs.commit_journal(),
+            || {
+                if self.fs.master_monitor.is_active() {
+                    Ok(())
+                } else {
+                    Err(FsError::not_leader_master(ctx.code, self.client_ip()))
+                }
+            },
+        );
+
         self.record_rpc_observability(ctx, &response);
 
         match response {
@@ -1586,5 +1645,120 @@ mod tests {
     fn test_metrics() -> &'static MasterMetrics {
         Master::init_test_metrics();
         Master::get_metrics().unwrap()
+    }
+
+    #[test]
+    fn journal_fence_inventory_covers_mutations_batches_and_retry_paths() {
+        for code in [
+            RpcCode::Mkdir,
+            RpcCode::CreateFile,
+            RpcCode::OpenFile,
+            RpcCode::AppendFile,
+            RpcCode::AddBlock,
+            RpcCode::CompleteFile,
+            RpcCode::CreateFilesBatch,
+            RpcCode::AddBlocksBatch,
+            RpcCode::CompleteFilesBatch,
+            RpcCode::Delete,
+            RpcCode::Free,
+            RpcCode::Rename,
+            RpcCode::SetAttr,
+            RpcCode::Symlink,
+            RpcCode::Link,
+            RpcCode::ResizeFile,
+            RpcCode::AssignWorker,
+            RpcCode::SetLock,
+            RpcCode::Mount,
+            RpcCode::UnMount,
+            RpcCode::UpdateMount,
+        ] {
+            assert!(MasterHandler::requires_journal_commit(code), "{:?}", code);
+        }
+        // An unclassified future sync operation must fail closed to a fence.
+        assert!(MasterHandler::requires_journal_commit(RpcCode::Undefined));
+    }
+
+    #[test]
+    fn journal_fence_waits_before_success_including_retry_success() {
+        use std::cell::Cell;
+        let commits = Cell::new(0);
+        for _ in 0..2 {
+            let result = MasterHandler::finish_journaled_response(
+                RpcCode::CreateFile,
+                Ok("same-retry-result"),
+                || {
+                    commits.set(commits.get() + 1);
+                    Ok(())
+                },
+                || {
+                    assert!(commits.get() > 0);
+                    Ok(())
+                },
+            )
+            .unwrap();
+            assert_eq!(result, "same-retry-result");
+        }
+        assert_eq!(commits.get(), 2);
+        assert!(MasterHandler::finish_journaled_response(
+            RpcCode::CompleteFilesBatch,
+            Ok(()),
+            || Err(FsError::common("commit failed")),
+            || panic!("commit failed")
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn journal_fence_rejects_leader_change_and_preserves_validation_errors() {
+        let error = MasterHandler::finish_journaled_response(
+            RpcCode::Mkdir,
+            Ok(()),
+            || Ok(()),
+            || Err(FsError::not_leader_master(RpcCode::Mkdir, "test")),
+        )
+        .unwrap_err();
+        assert!(matches!(error, FsError::NotLeaderMaster(_)));
+        for error in [
+            FsError::common("invalid parameters"),
+            FsError::not_leader_master(RpcCode::Mkdir, "test"),
+        ] {
+            let expected = error.to_string();
+            let result: FsResult<()> = MasterHandler::finish_journaled_response(
+                RpcCode::Mkdir,
+                Err(error),
+                || panic!("failed RPC must not fence"),
+                || panic!("failed RPC"),
+            );
+            assert_eq!(result.unwrap_err().to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn journal_fence_known_reads_and_worker_reports_do_not_wait() {
+        for code in [
+            RpcCode::FileStatus,
+            RpcCode::Exists,
+            RpcCode::ListStatus,
+            RpcCode::ListOptions,
+            RpcCode::GetBlockLocations,
+            RpcCode::GetFileBlockDetails,
+            RpcCode::GetFilesystemInfo,
+            RpcCode::GetLock,
+            RpcCode::GetMountTable,
+            RpcCode::GetMountInfo,
+            RpcCode::WorkerHeartbeat,
+            RpcCode::WorkerBlockReport,
+        ] {
+            assert_eq!(
+                MasterHandler::finish_journaled_response(
+                    code,
+                    Ok(7),
+                    || panic!("read/report must not fence"),
+                    || panic!("read/report")
+                )
+                .unwrap(),
+                7
+            );
+        }
     }
 }
