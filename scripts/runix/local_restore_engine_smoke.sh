@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
+bin_dir="${RUNIX_ENGINE_BIN_DIR:-/build/target/debug}"
+if [[ "$bin_dir" != /* || ! -x "$bin_dir/curvine-server" || ! -x "$bin_dir/curvine-cli" ]]; then
+    echo 'An absolute existing engine binary directory is required' >&2
+    exit 2
+fi
 cd /smoke
 for required in cluster.toml data/meta data/journal data/worker source.bin upload.bin; do
     if [[ ! -e "$required" ]]; then
@@ -19,12 +24,12 @@ cleanup() {
     if [[ -n "$master_pid" ]]; then kill "$master_pid" 2>/dev/null || true; fi
 }
 trap cleanup EXIT
-sha256sum /build/target/debug/curvine-server /build/target/debug/curvine-cli > binary-hashes.txt
-/build/target/debug/curvine-server --service master --conf /smoke/cluster.toml > master.out 2>&1 &
+sha256sum "$bin_dir/curvine-server" "$bin_dir/curvine-cli" > binary-hashes.txt
+"$bin_dir/curvine-server" --service master --conf /smoke/cluster.toml > master.out 2>&1 &
 master_pid=$!
-/build/target/debug/curvine-server --service worker --conf /smoke/cluster.toml > worker.out 2>&1 &
+"$bin_dir/curvine-server" --service worker --conf /smoke/cluster.toml > worker.out 2>&1 &
 worker_pid=$!
-cv() { timeout 30 /build/target/debug/curvine-cli --conf /smoke/cluster.toml "$@"; }
+cv() { timeout 30 "$bin_dir/curvine-cli" --conf /smoke/cluster.toml "$@"; }
 ready=false
 for attempt in $(seq 1 40); do
     if ! kill -0 "$master_pid" || ! kill -0 "$worker_pid"; then

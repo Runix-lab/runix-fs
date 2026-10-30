@@ -928,3 +928,32 @@ provisioning, licensing/metering transport and buyer/public tests remain separat
 gates. Existing seller/product evidence is historical Staging; this increment
 made no AWS call, paid resource, purchase, publication request or public deployment.
 The latest explicit scope remains local and draft; no persistent budget approved.
+
+
+2026-10-30 image-based S3/restore fixture implementation: both runners now accept
+--engine-artifact PATH and retain their explicit legacy mode. The image runner
+validates actual immutable image/source identity and internal network, prepares
+only known synthetic payloads/stopped state in a fresh labelled volume, normalizes
+ownership in a separate no-network root preparation container, and runs the
+filesystem only as UID1000/read-only root/no capabilities/no-new-privileges.
+There is no build/source/cache mount. Execution records verify actual image
+binary/version and mounted-script identities, stopped-state copy and cleanup.
+The shared validator now rejects added capabilities/devices too. Restore metadata
+can contain inert fixture mount credentials; it remains private/outside Git.
+
+Nine new fixture tests cover receipt/network/input/boundary validation, lost or
+failed creation responses, timeout, identity mismatch, bounded known state inputs,
+stopped copy, cleanup failure and bad executable directories. All366 Python tests,
+shell syntax, provenance/migration and whitespace checks passed locally.
+
+Actual standalone image S3 test passed on source811149c, local image
+sha256:1196eb04dbcce2c021feec1bbe01196eea52fbfb97c73a0fee9631748f037237.
+Both payload groups had4194304 bytes: independently seeded/read/restarted source
+SHA-256 a8b86760603526b02454f6d576f3c582ae034f3823dfd8e0ec1ea0cf6f0e9cef;
+engine write/restarted read/independent SDK readback SHA-256
+c922cf8126a1f92a023b81c6069e39319aaaf90f6aac21b13419714e9025d5af.
+The six actual files were independently rehashed against the fixture evidence.
+Fresh inventories confirmed owned engine/preparation/store/client containers,
+volume and network removed, and the fixture environment file gone. No AWS call,
+registry push, public port, paid resource or Marketplace purchase occurred.
+The image-based offline backup/fresh restore is running; no result claimed yet.

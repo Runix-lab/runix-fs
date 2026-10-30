@@ -231,12 +231,19 @@ def validate_image(state, image_id, revision):
         raise ValueError('Image identity/runtime configuration mismatch')
 
 
-def validate_smoke(state, name, volume, image_id, script, script_digest):
+def validate_smoke(state, name, volume, image_id, script, script_digest, private_network=None):
+    network = 'none'
+    if private_network is not None:
+        network = private_network.get('Name')
+        if (private_network.get('Internal') is not True or not network
+                or set(state['NetworkSettings']['Networks']) != {network}):
+            raise ValueError('Actual private fixture network required')
     host = state['HostConfig']
     mounts = state['Mounts']
     if (state['Name'] != '/' + name or state['Image'] != image_id
-            or state['Config']['User'] != '1000:1000' or host['NetworkMode'] != 'none'
+            or state['Config']['User'] != '1000:1000' or host['NetworkMode'] != network
             or host.get('PortBindings') or host['Privileged'] or not host['ReadonlyRootfs']
+            or host.get('CapAdd') or host.get('Devices')
             or 'ALL' not in host.get('CapDrop', [])
             or 'no-new-privileges' not in host.get('SecurityOpt', []) or len(mounts) != 2):
         raise ValueError('Unsafe smoke boundary')
@@ -256,12 +263,10 @@ def validate_smoke(state, name, volume, image_id, script, script_digest):
         raise ValueError('Unexpected smoke mounts')
 
 
-def validate_evidence(evidence, build, script, script_digest):
-    payloads = [file_digest(evidence / name) for name in ('payload.bin', 'read-before.bin', 'read-after.bin')]
-    if (any(item != payloads[0] for item in payloads) or payloads[0]['bytes'] != 4194304
-            or file_digest(script) != script_digest
+def validate_execution(evidence, build, script, script_digest):
+    if (file_digest(script) != script_digest
             or (evidence / 'runtime-uid.txt').read_text().strip() != '1000'):
-        raise RuntimeError('Actual data/identity comparison failed')
+        raise RuntimeError('Actual runtime/script identity comparison failed')
     if (evidence / 'image-script.sha256').read_text().split() != [script_digest['sha256'], '/run-smoke.sh']:
         raise ValueError('Actual mounted script identity mismatch')
     raw = (evidence / 'image-binaries.sha256').read_text()
@@ -280,6 +285,13 @@ def validate_evidence(evidence, build, script, script_digest):
                 or component_version(evidence / (name + '.version.json'), name.removeprefix('curvine-'),
                                      build['source_commit']) != build['binaries'][name]['version']):
             raise ValueError('Actual image binaries/version differ from compiled inputs')
+
+
+def validate_evidence(evidence, build, script, script_digest):
+    payloads = [file_digest(evidence / name) for name in ('payload.bin', 'read-before.bin', 'read-after.bin')]
+    if any(item != payloads[0] for item in payloads) or payloads[0]['bytes'] != 4194304:
+        raise RuntimeError('Actual data comparison failed')
+    validate_execution(evidence, build, script, script_digest)
     return payloads[0]
 
 

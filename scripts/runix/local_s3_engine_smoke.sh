@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
+bin_dir="${RUNIX_ENGINE_BIN_DIR:-/build/target/debug}"
+if [[ "$bin_dir" != /* || ! -x "$bin_dir/curvine-server" || ! -x "$bin_dir/curvine-cli" ]]; then
+    echo 'An absolute existing engine binary directory is required' >&2
+    exit 2
+fi
 cd /smoke
 export CURVINE_MASTER_HOSTNAME=127.0.0.1
 export CURVINE_WORKER_HOSTNAME=127.0.0.1
@@ -51,12 +56,12 @@ cleanup() {
 }
 trap cleanup EXIT
 start() {
-    /build/target/debug/curvine-server --service master --conf /smoke/cluster.toml >> master.out 2>&1 &
+    "$bin_dir/curvine-server" --service master --conf /smoke/cluster.toml >> master.out 2>&1 &
     master_pid=$!
-    /build/target/debug/curvine-server --service worker --conf /smoke/cluster.toml >> worker.out 2>&1 &
+    "$bin_dir/curvine-server" --service worker --conf /smoke/cluster.toml >> worker.out 2>&1 &
     worker_pid=$!
 }
-cv() { timeout 30 /build/target/debug/curvine-cli --conf /smoke/cluster.toml "$@"; }
+cv() { timeout 30 "$bin_dir/curvine-cli" --conf /smoke/cluster.toml "$@"; }
 ready() {
     for attempt in $(seq 1 40); do
         if ! kill -0 "$master_pid" || ! kill -0 "$worker_pid"; then
@@ -72,7 +77,7 @@ ready() {
     echo 'Engine readiness timeout' >&2
     return 1
 }
-sha256sum /build/target/debug/curvine-server /build/target/debug/curvine-cli > binary-hashes.txt
+sha256sum "$bin_dir/curvine-server" "$bin_dir/curvine-cli" > binary-hashes.txt
 start
 ready
 # CLI output is kept private: mount configuration contains fixture credentials.

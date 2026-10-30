@@ -1,7 +1,7 @@
 """Run a synthetic, private Docker-only S3 smoke, never AWS or production.
 
-Requires already installed immutable images, engine build volume and the local
-Marketplace SDK environment. Does not pull images or publish any host ports.
+Requires cached images and the local SDK. Legacy mode uses the build volume;
+--engine-artifact runs the pinned non-root image. No pulls or published ports.
 """
 import argparse
 import os
@@ -16,12 +16,16 @@ OBJECT_IMAGE = 'minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e7
 SDK_IMAGE = 'python@sha256:5b8b1421ccb6a525860a77863c049eab5847076cda34e030c75a80c58faf3f3c'
 
 
-def main(sdk_dir):
+def main(sdk_dir, engine_artifact=None):
     sdk = Path(sdk_dir).resolve(strict=True)
     if not (sdk / 'boto3').is_dir():
         raise ValueError('SDK directory must contain the existing boto3 package')
+    image_fixture = None
+    if engine_artifact is not None:
+        from image_engine_fixture import ImageEngineFixture
+        image_fixture = ImageEngineFixture(engine_artifact)
     fixture = Path(__file__).resolve().parent
-    for image in (TOOL_IMAGE, OBJECT_IMAGE, SDK_IMAGE):
+    for image in ((OBJECT_IMAGE, SDK_IMAGE) if image_fixture else (TOOL_IMAGE, OBJECT_IMAGE, SDK_IMAGE)):
         subprocess.run(['docker', 'image', 'inspect', image], stdout=subprocess.DEVNULL, check=True)
     runtime = Path(tempfile.mkdtemp(prefix='runix-s3-smoke-'))
     runtime.chmod(0o700)
@@ -53,19 +57,22 @@ def main(sdk_dir):
                 SDK_IMAGE, 'python', '/fixture/local_s3_fixture.py', phase,
             ], check=True, timeout=90)
         sdk_phase('seed')
-        with (runtime / 'console.out').open('w') as log:
-            completed = subprocess.run([
-                'docker', 'run', '--rm', '--name', engine, '--platform', 'linux/amd64',
-                '--network', network, '--env-file', str(envfile), '--cpus', '2', '--memory', '6g',
-                '--mount', 'type=volume,source=runix-fs-marketplace-target,target=/build,readonly',
-                '--mount', f'type=bind,source={runtime},target=/smoke',
-                '--mount', f'type=bind,source={fixture},target=/fixture,readonly',
-                TOOL_IMAGE, 'timeout', '420', 'bash', '/fixture/local_s3_engine_smoke.sh',
-            ], stdout=log, stderr=subprocess.STDOUT, timeout=480)
-        # The console contains only fixture phase results, not CLI mount output.
-        print((runtime / 'console.out').read_text(), end='', flush=True)
-        if completed.returncode:
-            raise RuntimeError(f'Local S3 smoke failed: exit {completed.returncode}; private logs retained in {runtime}')
+        if image_fixture:
+            image_fixture.run(runtime, network, engine, envfile, fixture / 'local_s3_engine_smoke.sh')
+        else:
+            with (runtime / 'console.out').open('w') as log:
+                completed = subprocess.run([
+                    'docker', 'run', '--rm', '--name', engine, '--platform', 'linux/amd64',
+                    '--network', network, '--env-file', str(envfile), '--cpus', '2', '--memory', '6g',
+                    '--mount', 'type=volume,source=runix-fs-marketplace-target,target=/build,readonly',
+                    '--mount', f'type=bind,source={runtime},target=/smoke',
+                    '--mount', f'type=bind,source={fixture},target=/fixture,readonly',
+                    TOOL_IMAGE, 'timeout', '420', 'bash', '/fixture/local_s3_engine_smoke.sh',
+                ], stdout=log, stderr=subprocess.STDOUT, timeout=480)
+            # The console contains only fixture phase results, not CLI mount output.
+            print((runtime / 'console.out').read_text(), end='', flush=True)
+            if completed.returncode:
+                raise RuntimeError(f'Local S3 smoke failed: exit {completed.returncode}; private logs retained in {runtime}')
         sdk_phase('verify-upload')
         sdk_phase('evidence')
     finally:
@@ -76,9 +83,19 @@ def main(sdk_dir):
             subprocess.run(['docker', 'network', 'rm', network], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # Inert fixture-only credentials need not persist after the temporary server.
         envfile.unlink(missing_ok=True)
+        if image_fixture:
+            containers = subprocess.run(['docker', 'ps', '-a', '--format', '{{.Names}}'],
+                check=True, capture_output=True, text=True).stdout.splitlines()
+            networks = subprocess.run(['docker', 'network', 'ls', '--format', '{{.Name}}'],
+                check=True, capture_output=True, text=True).stdout.splitlines()
+            if {store, engine, client}.intersection(containers) or network in networks:
+                raise RuntimeError('Image S3 fixture cleanup could not be confirmed')
+    return runtime
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--sdk-dir', required=True)
-    main(parser.parse_args().sdk_dir)
+    parser.add_argument('--engine-artifact')
+    arguments = parser.parse_args()
+    main(arguments.sdk_dir, arguments.engine_artifact)

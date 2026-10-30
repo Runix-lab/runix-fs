@@ -1,4 +1,7 @@
-"""Offline local engine/object backup, original teardown, and fresh restore."""
+"""Offline local engine/object backup, original teardown, and fresh restore.
+
+An explicit --engine-artifact uses the verified non-root image without build mounts.
+"""
 import argparse
 import hashlib
 import json
@@ -13,10 +16,14 @@ from pathlib import Path
 from local_s3_smoke import OBJECT_IMAGE, SDK_IMAGE, TOOL_IMAGE
 
 
-def main(sdk_dir):
+def main(sdk_dir, engine_artifact=None):
     sdk = Path(sdk_dir).resolve(strict=True)
     if not (sdk / 'boto3').is_dir():
         raise ValueError('Existing boto3 SDK directory required')
+    image_fixture = None
+    if engine_artifact is not None:
+        from image_engine_fixture import ImageEngineFixture
+        image_fixture = ImageEngineFixture(engine_artifact)
     fixture = Path(__file__).resolve().parent
     def docker(*args, timeout=30, check=True, **kwargs):
         return subprocess.run(['docker', *args], timeout=timeout, check=check,
@@ -25,9 +32,10 @@ def main(sdk_dir):
         containers = docker('ps', '-a', '--format', '{{.Names}}', capture_output=True).stdout.splitlines()
         networks = docker('network', 'ls', '--format', '{{.Name}}', capture_output=True).stdout.splitlines()
         return set(containers), set(networks)
-    for image in (TOOL_IMAGE, OBJECT_IMAGE, SDK_IMAGE):
+    for image in ((OBJECT_IMAGE, SDK_IMAGE) if image_fixture else (TOOL_IMAGE, OBJECT_IMAGE, SDK_IMAGE)):
         docker('image', 'inspect', image, stdout=subprocess.DEVNULL)
-    docker('volume', 'inspect', 'runix-fs-marketplace-target', stdout=subprocess.DEVNULL)
+    if not image_fixture:
+        docker('volume', 'inspect', 'runix-fs-marketplace-target', stdout=subprocess.DEVNULL)
     runtime = Path(tempfile.mkdtemp(prefix='runix-backup-smoke-'))
     runtime.chmod(0o700)
     print('Local synthetic evidence directory:', runtime, flush=True)
@@ -63,6 +71,10 @@ def main(sdk_dir):
                    SDK_IMAGE, 'python', '/fixture/' + script, phase,
                    timeout=120, stdout=log, stderr=subprocess.STDOUT)
     def engine(env, script):
+        if image_fixture:
+            result = image_fixture.run(env['folder'], env['network'], env['engine'], envfile, fixture / script)
+            evidence.setdefault('image_runs', []).append(result)
+            return
         with (env['folder'] / 'engine.out').open('w') as log:
             docker('run', '--rm', '--name', env['engine'], '--platform', 'linux/amd64',
                    '--network', env['network'], '--env-file', str(envfile), '--cpus', '2', '--memory', '6g',
@@ -142,4 +154,6 @@ def main(sdk_dir):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--sdk-dir', required=True)
-    main(parser.parse_args().sdk_dir)
+    parser.add_argument('--engine-artifact')
+    arguments = parser.parse_args()
+    main(arguments.sdk_dir, arguments.engine_artifact)

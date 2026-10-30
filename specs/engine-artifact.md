@@ -245,3 +245,59 @@ provisioning, licensing/metering transport and buyer/public tests remain separat
 gates. Existing seller/product evidence is historical Staging; this increment
 made no AWS call, paid resource, purchase, publication request or public deployment.
 The latest explicit scope remains local and draft; no persistent budget approved.
+
+
+Next gate contract, 2026-10-30: reuse the actual verified local image for the
+existing S3-compatible and offline-backup fixtures, replacing their build-volume
+input only when an explicit artifact receipt is provided. Legacy reproduction
+remains available and cannot count as image verification. Both shell fixtures
+accept an absolute existing RUNIX_ENGINE_BIN_DIR, defaulting to their old path.
+
+The image fixture must cross-check immutable image/source identity, require a
+fresh internally networked environment, and run the real engine as UID1000 with
+read-only root, no published ports/capabilities and no build/source/cache mount.
+Use a fresh owned volume. A separate no-network preparation container may copy
+only known synthetic payloads (or the already stopped restore state) and normalize
+volume ownership as root; it never starts master/worker, receives a credential environment,
+or mounts the host source/cache. Validate ownership before cleanup. Preserve
+raw failure evidence privately, copy state only after actual engine exit, and
+confirm fixture containers/volumes are gone. Reuse independently seeded/read-back
+objects, integrity-checked backup manifests, original-resource teardown before
+restore and new post-restore writes. Do not substitute an old binary, fake API,
+root engine or the original data/network for a successful restore.
+
+Unit targets: image/receipt and internal-network rejection, unsafe runtime
+mounts/UID/ports/capabilities, exact engine commands, preparation/runtime failure
+and scoped cleanup, missing/mismatched actual identity, executable-directory
+validation. Then execute real image S3 and fresh-boundary restore. No AWS call,
+public listener, registry push, online backup, hard quota, SLA or production
+provisioning claim follows from these local synthetic tests.
+
+
+2026-10-30 image-based S3/restore fixture implementation: both runners now accept
+--engine-artifact PATH and retain their explicit legacy mode. The image runner
+validates actual immutable image/source identity and internal network, prepares
+only known synthetic payloads/stopped state in a fresh labelled volume, normalizes
+ownership in a separate no-network root preparation container, and runs the
+filesystem only as UID1000/read-only root/no capabilities/no-new-privileges.
+There is no build/source/cache mount. Execution records verify actual image
+binary/version and mounted-script identities, stopped-state copy and cleanup.
+The shared validator now rejects added capabilities/devices too. Restore metadata
+can contain inert fixture mount credentials; it remains private/outside Git.
+
+Nine new fixture tests cover receipt/network/input/boundary validation, lost or
+failed creation responses, timeout, identity mismatch, bounded known state inputs,
+stopped copy, cleanup failure and bad executable directories. All366 Python tests,
+shell syntax, provenance/migration and whitespace checks passed locally.
+
+Actual standalone image S3 test passed on source811149c, local image
+sha256:1196eb04dbcce2c021feec1bbe01196eea52fbfb97c73a0fee9631748f037237.
+Both payload groups had4194304 bytes: independently seeded/read/restarted source
+SHA-256 a8b86760603526b02454f6d576f3c582ae034f3823dfd8e0ec1ea0cf6f0e9cef;
+engine write/restarted read/independent SDK readback SHA-256
+c922cf8126a1f92a023b81c6069e39319aaaf90f6aac21b13419714e9025d5af.
+The six actual files were independently rehashed against the fixture evidence.
+Fresh inventories confirmed owned engine/preparation/store/client containers,
+volume and network removed, and the fixture environment file gone. No AWS call,
+registry push, public port, paid resource or Marketplace purchase occurred.
+The image-based offline backup/fresh restore is running; no result claimed yet.
