@@ -101,7 +101,8 @@ tests, then produce Runix-specific performance measurements.
 
 ### Repair candidate: acknowledged metadata journal durability
 
-Scope defined 2026-10-30; code implemented below, real image recovery pending.
+Scope defined 2026-10-30; code implemented and locally crash-tested below.
+Commercial release gates remain.
 A controlled local failure-injection
 profile sets journal.writer_flush_batch_ms=60000 without changing the engine
 binaries or response checks. CLI upload and initial read of 4 MiB succeed, but
@@ -144,8 +145,8 @@ suite or cached-binary run cannot replace actual image verification. This gate
 covers process crashes, not power-loss, HA or production hard quota.
 
 
-Candidate implementation, 2026-10-30 (native unit verification passed; actual
-image recovery still pending): JournalWriter
+Candidate implementation, 2026-10-30 (native units and five actual image crash
+runs passed; production verification remains separate): JournalWriter
 sends commit requests on a separate unbounded control channel. They cannot
 consume bounded entry-queue slots while Raft apply emits progress records.
 The sender polls at most10ms, drains entries handed off before the request,

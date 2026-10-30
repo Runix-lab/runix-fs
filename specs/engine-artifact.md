@@ -211,3 +211,37 @@ both-process crash cases have started but have no final result yet. This passing
 local artifact does not establish FUSE/S3 image compatibility, HA, hard quota,
 production provisioning, billing or Marketplace buyer/public availability.
 No AWS resource, purchase or public listing/deployment change occurred.
+
+
+Completed same-image crash matrix, 2026-10-30. The verified source811149c
+local image was used without a build-cache mount in four further UID1000,
+no-network/read-only-root/capability-dropped fresh-volume cases:
+
+| Case | Actual recovered4MiB SHA-256 |
+| --- | --- |
+| long-batch-both | fada4e92d24bb25d41c373738552a4396373b9f12667fbb04a800b888c4d64b8 |
+| default-master | 9239387d85a02b65a7e69b6b9dde977f3410ff4e468c7d043034f21a009f58da |
+| default-worker | 16daded3c9e8a8589072be102547c80880e79d7601f9ee9fd27457bf29b54e69 |
+| default-both-repeat | 33edfe43edb82035dd298f6777956740b949d5109d0e47c9d2fee772b97c8fa4 |
+
+Each case verified in-image binary/version identity and mounted-script hash,
+compared real payload/before/after bytes and confirmed owned container/volume
+cleanup. Including the original artifact gate, five real image crash runs passed.
+The60000ms writer batching injection previously failed on8a0d213 with committed
+Raft index1 and FileNotFound; repaired811149c recovered successfully from committed
+index5 in that profile. This is evidence for the acknowledged-write window
+repair, not proof that all possible historical/default failures have one cause.
+
+The first matrix launcher used an unresolved /var path and was rejected by the
+strict mount-source check, with no passing result. Resolving its private script
+to /private/var produced the expected /host_mnt/private/var mapping and passed
+the existing check; no validator or engine assertion was weakened. Container
+configuration and synthetic engine evidence were retained outside Git. No
+unrelated Docker resource or verified local image was removed.
+
+The local image remains production_release=false: FUSE/S3 image compatibility,
+physical/tenant hard quota, backups/restore under this image, production identity,
+provisioning, licensing/metering transport and buyer/public tests remain separate
+gates. Existing seller/product evidence is historical Staging; this increment
+made no AWS call, paid resource, purchase, publication request or public deployment.
+The latest explicit scope remains local and draft; no persistent budget approved.
