@@ -183,3 +183,31 @@ CI41029041908 succeeded: https://github.com/Runix-lab/runix-fs/actions/runs/4102
 AWS product-tab opening still timed out through the browser extension. No fresh
 seller/account/product DOM, change request, live purchase or public visibility
 was obtained. Earlier Staging evidence remains historical. No AWS spend occurred.
+
+
+First passing source-pinned local image gate, 2026-10-30:
+
+- Source811149c0a7d970832c2a4638a51fcec4f420fc55, tree5fb2640304f3252e1385e26b05909dc18a149a59;
+  actual locked/offline native build completed in1m10s; compiler rustc1.98.1.
+- Actual retained local image ID
+  sha256:1196eb04dbcce2c021feec1bbe01196eea52fbfb97c73a0fee9631748f037237.
+  This is a Docker-local artifact, not a published registry/release reference.
+- Both in-image components reported811149c/protocol1. Actual binary SHA-256
+  matched fresh captured inputs; mounted-harness digest matched before/after.
+- UID1000, no network/ports or build-cache mount, read-only root, dropped
+  capabilities/no-new-privileges and a fresh owned data volume were verified.
+  4194304-byte write/read and simultaneous master/worker SIGKILL restart passed;
+  payload and both downloads hashed
+  5a349726db33913ba6344888fcd4a1fe4ebaf7ffeed78ef6632f31ed1d4e141f.
+- Passing artifact.json was issued after owned container/volume cleanup, with
+  production_release=false and bit_reproducibility_verified=false. Runtime
+  evidence remains private/outside Git. No cluster port was made public.
+
+GitHub Actions41033344673 succeeded for811149c:
+https://github.com/Runix-lab/runix-fs/actions/runs/41033344673
+Native203-pass unit verification is separate from that CI status. Follow-up
+same-image long-batch failure injection and individual master/worker/repeated
+both-process crash cases have started but have no final result yet. This passing
+local artifact does not establish FUSE/S3 image compatibility, HA, hard quota,
+production provisioning, billing or Marketplace buyer/public availability.
+No AWS resource, purchase or public listing/deployment change occurred.
