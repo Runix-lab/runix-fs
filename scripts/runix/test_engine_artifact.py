@@ -43,7 +43,7 @@ class ArtifactTests(unittest.TestCase):
             Labels={'org.opencontainers.image.revision': REVISION, 'org.opencontainers.image.source': artifact.SOURCE_URL}))
 
     def smoke(self):
-        return dict(Name='/owned', Image=IMAGE, Config={'User': '1000:1000'},
+        return dict(Name='/owned', Image=IMAGE, Config={'User': '1000:1000', 'Env': ['RUNIX_EXPECTED_SMOKE_SHA256=' + 'd' * 64]},
             HostConfig=dict(NetworkMode='none', PortBindings={}, Privileged=False, ReadonlyRootfs=True,
                 CapDrop=['ALL'], SecurityOpt=['no-new-privileges']),
             Mounts=[dict(Destination='/smoke', Type='volume', Name='owned-volume', RW=True),
@@ -180,14 +180,14 @@ class ArtifactTests(unittest.TestCase):
             artifact.validate_image(self.image(), 'runix-fs-local:tag', REVISION)
 
     def test_runtime_refuses_ports_privileges_wrong_identity_or_extra_mounts(self):
-        artifact.validate_smoke(self.smoke(), 'owned', 'owned-volume', IMAGE, Path('/fixed/script.sh'))
+        artifact.validate_smoke(self.smoke(), 'owned', 'owned-volume', IMAGE, Path('/fixed/script.sh'), 'd' * 64)
         changes = [('NetworkMode', 'host'), ('PortBindings', {'9001/tcp': [{'HostPort': '9001'}]}),
                    ('Privileged', True), ('ReadonlyRootfs', False), ('CapDrop', []), ('SecurityOpt', [])]
         for key, value in changes:
             state = self.smoke()
             state['HostConfig'][key] = value
             with self.subTest(key=key), self.assertRaises(ValueError):
-                artifact.validate_smoke(state, 'owned', 'owned-volume', IMAGE, Path('/fixed/script.sh'))
+                artifact.validate_smoke(state, 'owned', 'owned-volume', IMAGE, Path('/fixed/script.sh'), 'd' * 64)
         for change in ('user', 'image', 'mount', 'rw', 'volume'):
             state = self.smoke()
             if change == 'user': state['Config']['User'] = '0'
@@ -196,7 +196,25 @@ class ArtifactTests(unittest.TestCase):
             if change == 'rw': state['Mounts'][1]['RW'] = True
             if change == 'volume': state['Mounts'][0]['Name'] = 'unrelated-existing'
             with self.subTest(change=change), self.assertRaises(ValueError):
-                artifact.validate_smoke(state, 'owned', 'owned-volume', IMAGE, Path('/fixed/script.sh'))
+                artifact.validate_smoke(state, 'owned', 'owned-volume', IMAGE, Path('/fixed/script.sh'), 'd' * 64)
+
+    def test_desktop_path_mapping_is_scoped_and_requires_script_content_identity(self):
+        state = self.smoke()
+        state['Mounts'][1]['Source'] = '/host_mnt/fixed/script.sh'
+        with patch.object(artifact.sys, 'platform', 'darwin'):
+            artifact.validate_smoke(state, 'owned', 'owned-volume', IMAGE, Path('/fixed/script.sh'), 'd' * 64)
+            state['Mounts'][1]['Source'] = '/host_mnt/etc/other.sh'
+            with self.assertRaises(ValueError):
+                artifact.validate_smoke(state, 'owned', 'owned-volume', IMAGE, Path('/fixed/script.sh'), 'd' * 64)
+        state['Mounts'][1]['Source'] = '/host_mnt/fixed/script.sh'
+        with patch.object(artifact.sys, 'platform', 'linux'), self.assertRaises(ValueError):
+            artifact.validate_smoke(state, 'owned', 'owned-volume', IMAGE, Path('/fixed/script.sh'), 'd' * 64)
+        for env in ([], ['RUNIX_EXPECTED_SMOKE_SHA256=' + 'e' * 64],
+                    ['RUNIX_EXPECTED_SMOKE_SHA256=' + 'd' * 64] * 2):
+            state = self.smoke()
+            state['Config']['Env'] = env
+            with self.assertRaises(ValueError):
+                artifact.validate_smoke(state, 'owned', 'owned-volume', IMAGE, Path('/fixed/script.sh'), 'd' * 64)
 
     def test_dockerfile_preserves_license_source_and_actual_internal_names(self):
         text = artifact.dockerfile()
@@ -352,8 +370,13 @@ class ArtifactTests(unittest.TestCase):
     def test_offline_packaging_only_copies_explicit_public_artifacts(self):
         calls = []
         containers = []
+        initialized = []
         def run(args, **kwargs):
             calls.append(args)
+            if args[:2] == ['docker', 'exec'] and 'mkdir -p' in args[-1]:
+                initialized.append(True)
+            if args[:2] == ['docker', 'cp']:
+                self.assertTrue(initialized, 'copy must not race asynchronous container initialization')
             if args[:2] == ['docker', 'inspect']:
                 return Mock(stdout=json.dumps([{'Config': {'User': '0:0', 'Labels': {'io.runix.artifact': 'owned'}},
                     'Mounts': [], 'HostConfig': {'NetworkMode': 'none', 'Privileged': False, 'PortBindings': {}}}]))
@@ -365,7 +388,7 @@ class ArtifactTests(unittest.TestCase):
         self.assertIn('never', calls[0])
         self.assertNotIn('--mount', calls[0])
         self.assertNotIn('--privileged', calls[0])
-        permission_script = next(args[-1] for args in calls if args[:2] == ['docker', 'exec'])
+        permission_script = next(args[-1] for args in calls if args[:2] == ['docker', 'exec'] and 'chmod 0755' in args[-1])
         self.assertLess(permission_script.index('chown 0:0'), permission_script.index('chmod 0755'))
         copied = [Path(args[2]).name for args in calls if args[:2] == ['docker', 'cp']]
         self.assertEqual(copied, [*artifact.BINARIES, 'LICENSE', 'NOTICE', 'README.upstream.md', 'build-receipt.json'])
@@ -399,6 +422,7 @@ class ArtifactTests(unittest.TestCase):
         (evidence / 'image-binaries.sha256').write_text('\n'.join(rows) + '\n')
         script = self.root / 'smoke.sh'
         script.write_text('synthetic-test-script')
+        (evidence / 'image-script.sha256').write_text(artifact.file_digest(script)['sha256'] + '  /run-smoke.sh\n')
         return evidence, build, script, artifact.file_digest(script)
 
     def test_actual_evidence_requires_data_uid_binary_checksums_and_versions(self):
@@ -419,12 +443,13 @@ class ArtifactTests(unittest.TestCase):
             artifact.validate_evidence(evidence, build, script, script_digest)
 
     def test_corrupt_data_root_uid_or_changed_harness_refuse_passing_receipt(self):
-        for failure in ('data', 'uid', 'script'):
+        for failure in ('data', 'uid', 'script', 'mounted-script'):
             evidence, build, script, script_digest = self.evidence()
             if failure == 'data': (evidence / 'read-after.bin').write_bytes(b'bad')
             if failure == 'uid': (evidence / 'runtime-uid.txt').write_text('0')
             if failure == 'script': script.write_text('changed-after-start')
-            with self.assertRaises(RuntimeError):
+            if failure == 'mounted-script': (evidence / 'image-script.sha256').write_text('e' * 64 + '  /run-smoke.sh')
+            with self.assertRaises((RuntimeError, ValueError)):
                 artifact.validate_evidence(evidence, build, script, script_digest)
 
     def test_missing_or_unavailable_inventory_never_proves_cleanup(self):

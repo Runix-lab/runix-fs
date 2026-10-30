@@ -119,3 +119,21 @@ than granting FOWNER or additional runtime permissions. A real separate Docker
 probe verified root-owned binaries execute as UID1000 and report the captured
 source; its construction container and probe image were removed. The full data
 smoke remains a separate required passing gate after this correction.
+
+A subsequent actual package completed image creation but its boundary gate
+rejected the Desktop daemon's translated bind Source. A targeted real inspection
+confirmed /host_mnt plus the exact macOS client script path, with read-only bind,
+UID1000, no-new-privileges and a UID1000-owned data volume. The adapter now accepts
+only that exact observed alias on Darwin (ordinary exact paths remain required
+elsewhere), and also requires a unique expected script digest in container env.
+The wrapper checks the mounted script hash before executing it; copied evidence
+must independently match that hash. Other paths, writable binds, missing/duplicate
+content identity, root runtime, network/ports and changed scripts remain denied.
+Docker's native-path/VM behavior reference:
+https://docs.docker.com/engine/storage/bind-mounts/
+
+A targeted copy diagnostic also exposed an asynchronous constructor race: run -d
+can return before its initial mkdir finishes. Directory preparation now runs in
+a synchronous exec before any copy. Tests simulate delayed initial startup and
+require this ordering. Private failure records retain only bounded static reasons
+for validation/runtime errors; raw command diagnostics stay in private logs.

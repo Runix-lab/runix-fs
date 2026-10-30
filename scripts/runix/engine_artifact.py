@@ -11,6 +11,7 @@ import shutil
 import stat
 import struct
 import subprocess
+import sys
 import tempfile
 import uuid
 from pathlib import Path
@@ -181,8 +182,7 @@ def package_image(output, image_tag, revision, run_id, containers):
             '--pull', 'never', '--platform', 'linux/amd64', '--user', '0:0', '--workdir', '/',
             '--network', 'none', '--cap-drop', 'ALL', '--cap-add', 'CHOWN', '--pids-limit', '64',
             '--memory', '256m', '--security-opt', 'no-new-privileges', '--entrypoint', '/bin/sh', TOOL_IMAGE,
-            '-euc', 'mkdir -p /opt/runix/bin /usr/share/doc/runix-fs /smoke /var/lib/runix; '
-            'chown 1000:1000 /smoke /var/lib/runix; exec sleep 3600'])
+            '-euc', 'exec sleep 3600'])
     finally:
         try:
             info = json.loads(command(['docker', 'inspect', name]).stdout)[0]
@@ -196,6 +196,9 @@ def package_image(output, image_tag, revision, run_id, containers):
             or info['HostConfig']['Privileged'] or info['HostConfig'].get('PortBindings')
             or info['Config']['User'] != '0:0'):
         raise ValueError('Unexpected packaging mount/network/identity')
+    command(['docker', 'exec', '--user', '0:0', name, '/bin/sh', '-euc',
+        'mkdir -p /opt/runix/bin /usr/share/doc/runix-fs /smoke /var/lib/runix; '
+        'chown 1000:1000 /smoke /var/lib/runix'])
     for filename in BINARIES:
         command(['docker', 'cp', str(output / filename), name + ':/opt/runix/bin/' + filename])
     for filename in ('LICENSE', 'NOTICE', 'README.upstream.md', 'build-receipt.json'):
@@ -228,7 +231,7 @@ def validate_image(state, image_id, revision):
         raise ValueError('Image identity/runtime configuration mismatch')
 
 
-def validate_smoke(state, name, volume, image_id, script):
+def validate_smoke(state, name, volume, image_id, script, script_digest):
     host = state['HostConfig']
     mounts = state['Mounts']
     if (state['Name'] != '/' + name or state['Image'] != image_id
@@ -238,10 +241,18 @@ def validate_smoke(state, name, volume, image_id, script):
             or 'no-new-privileges' not in host.get('SecurityOpt', []) or len(mounts) != 2):
         raise ValueError('Unsafe smoke boundary')
     by_path = {mount['Destination']: mount for mount in mounts}
+    allowed_sources = {str(script)}
+    if sys.platform == 'darwin':
+        allowed_sources.add('/host_mnt' + str(script))
+    expected = 'RUNIX_EXPECTED_SMOKE_SHA256=' + script_digest
+    env = state['Config'].get('Env', [])
+    if (not re.fullmatch(r'[0-9a-f]{64}', script_digest)
+            or [value for value in env if value.startswith('RUNIX_EXPECTED_SMOKE_SHA256=')] != [expected]):
+        raise ValueError('Expected script content identity missing/ambiguous')
     if (set(by_path) != {'/smoke', '/run-smoke.sh'}
             or by_path['/smoke']['Type'] != 'volume' or by_path['/smoke'].get('Name') != volume
             or not by_path['/smoke']['RW'] or by_path['/run-smoke.sh']['Type'] != 'bind'
-            or by_path['/run-smoke.sh']['Source'] != str(script) or by_path['/run-smoke.sh']['RW']):
+            or by_path['/run-smoke.sh']['Source'] not in allowed_sources or by_path['/run-smoke.sh']['RW']):
         raise ValueError('Unexpected smoke mounts')
 
 
@@ -251,6 +262,8 @@ def validate_evidence(evidence, build, script, script_digest):
             or file_digest(script) != script_digest
             or (evidence / 'runtime-uid.txt').read_text().strip() != '1000'):
         raise RuntimeError('Actual data/identity comparison failed')
+    if (evidence / 'image-script.sha256').read_text().split() != [script_digest['sha256'], '/run-smoke.sh']:
+        raise ValueError('Actual mounted script identity mismatch')
     raw = (evidence / 'image-binaries.sha256').read_text()
     if len(raw) > 4096:
         raise ValueError('Bounded image checksums required')
@@ -387,8 +400,12 @@ def main(repo, revision):
                 '--pids-limit', '512', '--cpus', '2', '--memory', '4g', '--tmpfs', '/tmp:rw,nosuid,nodev,noexec,size=64m',
                 '--mount', 'type=volume,source=' + volume + ',target=/smoke',
                 '--mount', f'type=bind,source={script},target=/run-smoke.sh,readonly',
-                '--env', 'RUNIX_ENGINE_BIN_DIR=/opt/runix/bin', '--entrypoint', '/bin/bash', image_id,
-                '-euo', 'pipefail', '-c', 'id -u > /smoke/runtime-uid.txt; '
+                '--env', 'RUNIX_ENGINE_BIN_DIR=/opt/runix/bin', '--env',
+                'RUNIX_EXPECTED_SMOKE_SHA256=' + script_digest['sha256'], '--entrypoint', '/bin/bash', image_id,
+                '-euo', 'pipefail', '-c', 'sha256sum /run-smoke.sh > /smoke/image-script.sha256; '
+                'read -r actual_script_digest script_label < /smoke/image-script.sha256; '
+                'test "$actual_script_digest" = "$RUNIX_EXPECTED_SMOKE_SHA256"; '
+                'id -u > /smoke/runtime-uid.txt; '
                 'sha256sum /opt/runix/bin/curvine-server /opt/runix/bin/curvine-cli > /smoke/image-binaries.sha256; '
                 '/opt/runix/bin/curvine-server --version-json > /smoke/curvine-server.version.json; '
                 '/opt/runix/bin/curvine-cli --version-json > /smoke/curvine-cli.version.json; exec bash /run-smoke.sh'])
@@ -401,7 +418,8 @@ def main(repo, revision):
                 pass
         if smoke not in containers:
             raise RuntimeError('Smoke container ownership mismatch')
-        validate_smoke(json.loads(command(['docker', 'inspect', smoke]).stdout)[0], smoke, volume, image_id, script)
+        validate_smoke(json.loads(command(['docker', 'inspect', smoke]).stdout)[0], smoke, volume, image_id,
+                       script, script_digest['sha256'])
         print('Running actual isolated image write/read and crash-recovery gate.', flush=True)
         result = subprocess.run(['docker', 'wait', smoke], check=True, timeout=360, capture_output=True, text=True)
         with (runtime / 'smoke.log').open('w') as log:
@@ -420,7 +438,8 @@ def main(repo, revision):
         print(json.dumps({'artifact': str(runtime / 'artifact.json'), 'image_id': image_id,
                           'actual_write_read_restart': True}), flush=True)
     except Exception as error:
-        write_json(runtime / 'failure.json', {'category': type(error).__name__, 'passing_receipt': False})
+        reason = str(error)[:256] if type(error) in (ValueError, RuntimeError) else None
+        write_json(runtime / 'failure.json', {'category': type(error).__name__, 'reason': reason, 'passing_receipt': False})
         stderr = getattr(error, 'stderr', None)
         if isinstance(stderr, str):
             path = runtime / 'private-command-error.log'

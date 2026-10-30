@@ -763,3 +763,22 @@ and no capabilities. A real Docker package/execute probe against the captured
 metadata. Probe container/image cleanup completed. All 25 artifact unit tests
 pass including the ownership-order regression. Full image data/recovery still
 requires a fresh passing pipeline; no SaaS delivery or public status is inferred.
+
+Ownership correction 6fb167a866b043ff428a850203da12dfa2456d96 was pushed; CI
+41003121283 completed with success:
+https://github.com/Runix-lab/runix-fs/actions/runs/41003121283
+The actual compile finished in 44.30s and an image was created, but the strict
+mount gate rejected the Desktop daemon's host path translation. No passing
+receipt was issued, and that operation's owned resources were removed.
+
+Targeted actual Docker inspection established /host_mnt + exact client path,
+read-only script mount, UID1000/no-new-privileges and data-volume owner1000.
+Added a narrowly scoped Darwin mapping plus pre-execution script SHA checking
+and independent captured-script evidence, rather than accepting arbitrary mounts.
+Separately, a copy diagnostic found constructor mkdir could race run -d; use a
+synchronous exec initialization before copying. Regression tests simulate delayed
+startup, reject foreign mapped paths and missing/duplicate/mismatched script
+identity, and reject changed mounted-script evidence. All 355 Python tests pass
+locally (26 artifact tests), plus source/whitespace checks. A fresh full runtime
+image gate is still required. No AWS resource, buyer purchase or public service
+was created during these fixes.
