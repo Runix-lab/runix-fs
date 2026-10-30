@@ -97,3 +97,47 @@ crate test does not prove POSIX compatibility, CSI isolation or failover. Before
 engine releases, execute the explicit integration harness, FUSE create/read/
 write/rename/delete/fsync, restart/recovery, UFS failure/retry and CSI lifecycle
 tests, then produce Runix-specific performance measurements.
+
+
+### Pending repair: acknowledged metadata journal durability
+
+Scope defined 2026-10-30, not implemented. A controlled local failure-injection
+profile sets journal.writer_flush_batch_ms=60000 without changing the engine
+binaries or response checks. CLI upload and initial read of 4 MiB succeed, but
+immediate simultaneous master/worker SIGKILL restarts with committed Raft index1
+and subsequent reads return FileNotFound. This demonstrates an acknowledgement
+window in the async journal path; it does not prove every historical failure
+has this cause. Default-config diagnostics also passed, so no claim of a
+consistent default-config failure is made.
+
+Required repair contract:
+
+- Successful RPCs that enqueue persistent namespace/file/mount mutations must
+  wait for an ordered journal commit barrier before returning success. Include
+  single/batched create/add-block/complete, metadata changes and retry responses;
+  audit the complete RPC dispatch inventory rather than protecting only CLI put.
+- Preserve existing serialized JournalEntry/protobuf formats. Keep batching;
+  an internal queue command may force pending entries to flush and acknowledge
+  only after the actual Raft proposal commit/application acknowledgement.
+- Release namespace/RocksDB/worker guards before waiting: apply/replay can need
+  them. Concurrent writes must not let a later acknowledgement skip an earlier
+  queued mutation. Empty barriers must not invent an operation or usage event.
+- Journal failure, disconnected acknowledgement, timeout or leader change must
+  not yield a successful response. Existing retry-cache success cannot bypass
+  the barrier. Mutation outcome may be uncertain after a transport failure;
+  retain existing retry semantics, without claiming exactly-once execution.
+- Disabled journaling is an explicit configuration boundary, never a production
+  fallback after failure. Testing receivers must be exercised explicitly; do
+  not silently acknowledge uncommitted writes merely to make tests pass.
+- Do not restore uncommitted local WAL around Raft recovery, change the default
+  WAL policy, delay the smoke before SIGKILL, expose ports or add Marketplace
+  billing to the data path.
+
+Test targets before accepting the repair: queue order and concurrent barriers;
+forced partial-batch flush; successful actual commit vs pending/failing commit;
+empty/disconnected/timeout cases; RPC error/NotLeader and validation paths;
+single/batch mutation and retry inventory; no fs_dir lock held during waiting;
+long-batch failure-injection regression; repeated default-profile source-pinned
+non-root image write/read and master/worker/both crash recovery. One green unit
+suite or cached-binary run cannot replace actual image verification. This gate
+covers process crashes, not power-loss, HA or production hard quota.
