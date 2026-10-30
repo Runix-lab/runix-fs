@@ -301,3 +301,44 @@ Fresh inventories confirmed owned engine/preparation/store/client containers,
 volume and network removed, and the fixture environment file gone. No AWS call,
 registry push, public port, paid resource or Marketplace purchase occurred.
 The image-based offline backup/fresh restore is running; no result claimed yet.
+
+
+## Verified pinned-image offline restore, 2026-10-30
+
+Passed using source811149c0a7d970832c2a4638a51fcec4f420fc55 and the same
+local image sha256:1196eb04dbcce2c021feec1bbe01196eea52fbfb97c73a0fee9631748f037237
+for both original and restored engines. Both actual executions verified UID1000,
+read-only root, dropped capabilities/no-new-privileges, actual in-image hashes/
+versions and a read-only script digest. Neither engine mounted the build cache,
+source tree or the original runtime folder. Each used a fresh owned volume;
+only a separate no-network preparation container normalized volume ownership.
+
+The original engine was actually stopped before copying its metadata/journal/
+worker state. Original engine/store/client/network removal was verified before
+creating the restore environment. Objects were exported/imported through the
+existing bounded two-object integrity manifest and independently read back.
+The restored engine read both old files and wrote a new file; independent SDK
+readback from the fresh object store matched the new write.
+
+| Actual4MiB group | SHA-256 |
+| --- | --- |
+| Original/source/import/restored read | 519503bed6c55c97c6151384eee74eecea41493b9b4b1b8aa8d99a54ffff8669 |
+| Original/upload/import/restored read | 840ec8d0c67c35e5ddab9c2bf580916f0282a3f138ef040f937ccc37b8258a7d |
+| New post-restore write/read/direct S3-compatible read | 0ee734caec6724440c021ef0d20ea07dcf3b739c6f261a58a136e00dbee44743 |
+
+All seven actual host payload files were rehashed after completion and matched
+the fixture's evidence. Fresh Docker inventories independently confirmed both
+environments' owned engine/preparation/store/client containers, volumes and
+networks removed. The private fixture environment file was gone. Raw databases,
+credentials and runtime evidence stay outside Git; no AWS resource or purchase.
+This retains worker state and remains an offline local synthetic recovery point,
+not cold-cache recovery, online/scheduled/encrypted production backup or an
+approved retention/RPO/RTO policy. No SaaS readiness/publication is implied.
+
+The runners accept --engine-artifact followed by the passing artifact.json path
+and the existing --sdk-dir. Source619f584f779d33e637b206d463f069f71d57daf7 was pushed;
+CI41044325525 succeeded:
+https://github.com/Runix-lab/runix-fs/actions/runs/41044325525
+All366 Python tests (including9 new image-fixture tests), shell syntax,
+migration/provenance and whitespace checks passed locally. The engine's earlier
+203 active Rust unit tests and five actual crash runs remain separate evidence.
