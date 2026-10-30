@@ -87,3 +87,26 @@ mismatched server/CLI protocols. Both actual captured binaries reported d7051cf
 and protocol 1 through that interface. The first failed gate issued no passing
 receipt and its builder was removed. Native compilation success alone is not
 counted as image validation. Two regression tests were added (21 artifact tests).
+
+The corrected second source build completed in 44.84s with native cache reuse,
+from bef7ab49dce133fb2fb177d580eb64d748662df5. BuildKit then waited on registry
+metadata despite the locally cached pinned base; the bounded command eventually
+failed/canceled without producing a passing artifact. This is a packaging
+failure, not a successful image or failed engine data test.
+
+Offline packaging now uses a separate no-network/no-mount construction container
+from the cached digest (--pull never). Only the two fresh binaries and explicit
+LICENSE/NOTICE/upstream README/build receipt are copied. Local Docker commit
+sets the runtime user/workdir/entrypoint/help default and operation/source labels;
+it never snapshots the compile container, its source, cache mounts or build env.
+The generated Dockerfile remains an equivalent review recipe, not a claim that
+BuildKit was used for this method. packaging_method records the actual method.
+The temporary construction user is root with only CHOWN added after dropping
+capabilities; the engine runtime remains UID 1000 with all capabilities dropped.
+Actual image checksums and structured component versions are collected inside
+the data smoke and compared to the original compiled inputs as an extra gate.
+
+References checked for the exact offline copy/config behavior:
+
+- https://docs.docker.com/reference/cli/docker/container/commit/
+- https://docs.docker.com/reference/cli/docker/container/cp/

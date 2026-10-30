@@ -724,3 +724,25 @@ was invented or modified. Added 2 regression tests; all 350 Python tests pass
 locally. The failed operation has no passing receipt and its builder is gone.
 A fresh captured-source pipeline using the corrected adapter is required before
 claiming a verified image. No cloud resource or buyer transaction was created.
+
+Corrected-adapter commit bef7ab49dce133fb2fb177d580eb64d748662df5 was pushed;
+GitHub Actions 41000561158 completed with success for that SHA:
+https://github.com/Runix-lab/runix-fs/actions/runs/41000561158
+The second actual source build completed in 44.84s, but BuildKit's cached-base
+registry metadata step remained unavailable and the bounded image command failed.
+No passing image receipt was produced. Its manager completed failure and cleanup
+before starting another operation; a stopped compile container alone was not
+used as evidence that the whole image workflow had stopped.
+
+Replaced that network-dependent packaging step with explicit local copy/commit
+from a separate cached-base construction container without mounts or network.
+Only public artifact inputs enter new layers; source/cache/build environment are
+not snapshotted. Final image config is pinned to UID1000/help/default paths and
+source/operation labels, then checked again on actual runtime. The fixture now
+collects actual in-image binary hashes and version JSON for comparison against
+the compiled input receipt, alongside actual data/restart/UID checks. Four more
+unit tests cover offline packaging, foreign ownership, image/input mismatch,
+changed harness and corrupt data/UID evidence (25 artifact tests total).
+Fresh local STS credential-chain inspection returned no_credentials; no seller
+API call or live account/product state was obtained, and no keys were requested.
+A new actual offline image run is still required before claiming verification.

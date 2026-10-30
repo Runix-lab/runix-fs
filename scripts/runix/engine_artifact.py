@@ -36,8 +36,8 @@ git diff --quiet
 '''
 
 
-def command(args, **kwargs):
-    return subprocess.run(args, check=True, timeout=60, capture_output=True, text=True, **kwargs)
+def command(args, timeout=60, **kwargs):
+    return subprocess.run(args, check=True, timeout=timeout, capture_output=True, text=True, **kwargs)
 
 
 def write_json(path, value):
@@ -155,6 +155,7 @@ def component_version(path, component, revision):
 
 
 def dockerfile():
+    """Equivalent review recipe; the offline packager uses copy/commit locally."""
     return f'''FROM {TOOL_IMAGE}
 LABEL org.opencontainers.image.source="{SOURCE_URL}"
 COPY curvine-server curvine-cli /opt/runix/bin/
@@ -165,6 +166,54 @@ WORKDIR /var/lib/runix
 ENTRYPOINT ["/opt/runix/bin/curvine-server"]
 CMD ["--help"]
 '''
+
+
+def package_image(output, image_tag, revision, run_id, containers):
+    """Construct new layers from explicit public artifacts, never build caches.
+
+    Avoid BuildKit's registry metadata lookup even for cached digest inputs.
+    This temporary construction container has no mounts or network. Runtime
+    remains non-root; all identity/data checks still run on the actual image.
+    """
+    name = 'runix-artifact-pack-' + run_id
+    try:
+        command(['docker', 'run', '-d', '--name', name, '--label', 'io.runix.artifact=' + run_id,
+            '--pull', 'never', '--platform', 'linux/amd64', '--user', '0:0', '--workdir', '/',
+            '--network', 'none', '--cap-drop', 'ALL', '--cap-add', 'CHOWN', '--pids-limit', '64',
+            '--memory', '256m', '--security-opt', 'no-new-privileges', '--entrypoint', '/bin/sh', TOOL_IMAGE,
+            '-euc', 'mkdir -p /opt/runix/bin /usr/share/doc/runix-fs /smoke /var/lib/runix; '
+            'chown 1000:1000 /smoke /var/lib/runix; exec sleep 3600'])
+    finally:
+        try:
+            info = json.loads(command(['docker', 'inspect', name]).stdout)[0]
+            if info['Config']['Labels'].get('io.runix.artifact') == run_id:
+                containers.append(name)
+        except Exception:
+            pass
+    if name not in containers:
+        raise RuntimeError('Packaging container ownership mismatch')
+    if (info['Mounts'] or info['HostConfig']['NetworkMode'] != 'none'
+            or info['HostConfig']['Privileged'] or info['HostConfig'].get('PortBindings')
+            or info['Config']['User'] != '0:0'):
+        raise ValueError('Unexpected packaging mount/network/identity')
+    for filename in BINARIES:
+        command(['docker', 'cp', str(output / filename), name + ':/opt/runix/bin/' + filename])
+    for filename in ('LICENSE', 'NOTICE', 'README.upstream.md', 'build-receipt.json'):
+        command(['docker', 'cp', str(output / filename), name + ':/usr/share/doc/runix-fs/' + filename])
+    command(['docker', 'exec', '--user', '0:0', name, '/bin/sh', '-euc',
+        'chmod 0755 /opt/runix/bin/curvine-server /opt/runix/bin/curvine-cli; '
+        'chmod 0644 /usr/share/doc/runix-fs/*'])
+    args = ['docker', 'commit']
+    changes = ['USER 1000:1000', 'WORKDIR /var/lib/runix',
+        'ENTRYPOINT ["/opt/runix/bin/curvine-server"]', 'CMD ["--help"]',
+        'LABEL org.opencontainers.image.source=' + SOURCE_URL,
+        'LABEL org.opencontainers.image.revision=' + revision, 'LABEL io.runix.artifact=' + run_id]
+    for change in changes:
+        args += ['--change', change]
+    result = command(args + [name, image_tag], timeout=300).stdout.strip()
+    if not re.fullmatch(r'sha256:[0-9a-f]{64}', result):
+        raise ValueError('Actual committed image identifier required')
+    return result
 
 
 def validate_image(state, image_id, revision):
@@ -193,6 +242,31 @@ def validate_smoke(state, name, volume, image_id, script):
             or not by_path['/smoke']['RW'] or by_path['/run-smoke.sh']['Type'] != 'bind'
             or by_path['/run-smoke.sh']['Source'] != str(script) or by_path['/run-smoke.sh']['RW']):
         raise ValueError('Unexpected smoke mounts')
+
+
+def validate_evidence(evidence, build, script, script_digest):
+    payloads = [file_digest(evidence / name) for name in ('payload.bin', 'read-before.bin', 'read-after.bin')]
+    if (any(item != payloads[0] for item in payloads) or payloads[0]['bytes'] != 4194304
+            or file_digest(script) != script_digest
+            or (evidence / 'runtime-uid.txt').read_text().strip() != '1000'):
+        raise RuntimeError('Actual data/identity comparison failed')
+    raw = (evidence / 'image-binaries.sha256').read_text()
+    if len(raw) > 4096:
+        raise ValueError('Bounded image checksums required')
+    reported = {}
+    for line in raw.splitlines():
+        fields = line.split()
+        if (len(fields) != 2 or not re.fullmatch(r'[0-9a-f]{64}', fields[0])
+                or fields[1] not in {'/opt/runix/bin/' + name for name in BINARIES}
+                or fields[1] in reported):
+            raise ValueError('Invalid actual image checksum evidence')
+        reported[fields[1]] = fields[0]
+    for name in BINARIES:
+        if (reported.get('/opt/runix/bin/' + name) != build['binaries'][name]['sha256']
+                or component_version(evidence / (name + '.version.json'), name.removeprefix('curvine-'),
+                                     build['source_commit']) != build['binaries'][name]['version']):
+            raise ValueError('Actual image binaries/version differ from compiled inputs')
+    return payloads[0]
 
 
 def owned_cleanup(containers, volume=None):
@@ -240,7 +314,8 @@ def main(repo, revision):
     containers, own_volume, own_image = [], None, False
     print('Artifact operation directory:', runtime, flush=True)
     write_json(runtime / 'operation.json', {'source_commit': revision, 'build_container': BUILD_NAME,
-        'smoke_container': smoke, 'smoke_volume': volume, 'image_tag': image_tag, 'run_id': run_id})
+        'smoke_container': smoke, 'smoke_volume': volume, 'image_tag': image_tag, 'run_id': run_id,
+        'packaging_container': 'runix-artifact-pack-' + run_id})
     try:
         for cached in (TOOL_IMAGE,):
             state = json.loads(command(['docker', 'image', 'inspect', cached]).stdout)[0]
@@ -265,17 +340,15 @@ def main(repo, revision):
             if state['Config']['Labels'].get('io.runix.artifact') == run_id:
                 containers.append(BUILD_NAME)
         build = receipt(source, output, revision, tree)
+        build['packaging_method'] = 'local-docker-copy-commit'
         for name in ('LICENSE', 'NOTICE', 'README.upstream.md'):
             shutil.copyfile(source / name, output / name)
         write_json(output / 'build-receipt.json', build)
         (output / 'Dockerfile').write_text(dockerfile())
         print('Building local non-root image from fresh binaries.', flush=True)
         try:
-            with (runtime / 'image-build.log').open('w') as log:
-                subprocess.run(['docker', 'build', '--pull=false', '--network=none', '--platform=linux/amd64',
-                    '--label', 'org.opencontainers.image.revision=' + revision, '--label', 'io.runix.artifact=' + run_id,
-                    '--iidfile', str(runtime / 'image-id'), '--tag', image_tag, str(output)],
-                    check=True, timeout=600, stdout=log, stderr=subprocess.STDOUT)
+            reference = package_image(output, image_tag, revision, run_id, containers)
+            (runtime / 'image-id').write_text(reference + '\n')
         finally:
             # A failed CLI observation may still have created an image. Adopt
             # only the unique operation label, never a same-name foreign image.
@@ -314,7 +387,10 @@ def main(repo, revision):
                 '--mount', 'type=volume,source=' + volume + ',target=/smoke',
                 '--mount', f'type=bind,source={script},target=/run-smoke.sh,readonly',
                 '--env', 'RUNIX_ENGINE_BIN_DIR=/opt/runix/bin', '--entrypoint', '/bin/bash', image_id,
-                '-euo', 'pipefail', '-c', 'id -u > /smoke/runtime-uid.txt; exec bash /run-smoke.sh'])
+                '-euo', 'pipefail', '-c', 'id -u > /smoke/runtime-uid.txt; '
+                'sha256sum /opt/runix/bin/curvine-server /opt/runix/bin/curvine-cli > /smoke/image-binaries.sha256; '
+                '/opt/runix/bin/curvine-server --version-json > /smoke/curvine-server.version.json; '
+                '/opt/runix/bin/curvine-cli --version-json > /smoke/curvine-cli.version.json; exec bash /run-smoke.sh'])
         finally:
             try:
                 info = json.loads(command(['docker', 'inspect', smoke]).stdout)[0]
@@ -333,19 +409,23 @@ def main(repo, revision):
             raise RuntimeError('Actual image engine smoke failed')
         evidence = runtime / 'smoke'
         command(['docker', 'cp', smoke + ':/smoke/.', str(evidence)])
-        payloads = [file_digest(evidence / name) for name in ('payload.bin', 'read-before.bin', 'read-after.bin')]
-        if (any(item != payloads[0] for item in payloads) or payloads[0]['bytes'] != 4194304
-                or file_digest(script) != script_digest
-                or (evidence / 'runtime-uid.txt').read_text().strip() != '1000'):
-            raise RuntimeError('Actual data/identity comparison failed')
+        payload = validate_evidence(evidence, build, script, script_digest)
         owned_cleanup(containers, own_volume)
         containers, own_volume = [], None
         write_json(runtime / 'artifact.json', dict(build, image_id=image_id, image_tag=image_tag, smoke_script=script_digest,
-            smoke={'bytes': payloads[0]['bytes'], 'sha256': payloads[0]['sha256'], 'runtime_uid': 1000,
+            smoke={'bytes': payload['bytes'], 'sha256': payload['sha256'], 'runtime_uid': 1000,
                    'actual_write_read_restart': True, 'owned_resources_removed': True}))
         own_image = False  # Retain the successfully verified local artifact.
         print(json.dumps({'artifact': str(runtime / 'artifact.json'), 'image_id': image_id,
                           'actual_write_read_restart': True}), flush=True)
+    except Exception as error:
+        write_json(runtime / 'failure.json', {'category': type(error).__name__, 'passing_receipt': False})
+        stderr = getattr(error, 'stderr', None)
+        if isinstance(stderr, str):
+            path = runtime / 'private-command-error.log'
+            path.write_text(stderr[-65536:])
+            path.chmod(0o600)
+        raise
     finally:
         final_cleanup(containers, own_volume, image_tag if own_image else None)
 

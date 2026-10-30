@@ -304,7 +304,7 @@ class ArtifactTests(unittest.TestCase):
                 for name in ('LICENSE', 'NOTICE', 'README.upstream.md'):
                     (source / name).write_text('synthetic-license-fixture')
                 return TREE
-            def command(args):
+            def command(args, **kwargs):
                 calls.append(args)
                 op = operation()
                 if args[:3] == ['docker', 'image', 'inspect']:
@@ -316,8 +316,14 @@ class ArtifactTests(unittest.TestCase):
                 if args[:3] == ['docker', 'volume', 'inspect']:
                     return Mock(stdout=json.dumps([{'Labels': {'io.runix.artifact': op['run_id']}}]))
                 if args[:2] == ['docker', 'inspect']:
-                    return Mock(stdout=json.dumps([{'Config': {'Labels': {'io.runix.artifact': op['run_id']}}}]))
-                if args[:3] == ['docker', 'run', '-d'] and phase == 'smoke':
+                    info = {'Config': {'User': '0:0', 'Labels': {'io.runix.artifact': op['run_id']}},
+                        'Mounts': [], 'HostConfig': {'NetworkMode': 'none', 'Privileged': False, 'PortBindings': {}}}
+                    return Mock(stdout=json.dumps([info]))
+                if args[:2] == ['docker', 'commit']:
+                    if phase == 'image':
+                        raise subprocess.CalledProcessError(1, ['synthetic-lost-image-response'])
+                    return Mock(stdout=IMAGE)
+                if args[:3] == ['docker', 'run', '-d'] and phase == 'smoke' and args[args.index('--name')+1] == op['smoke_container']:
                     raise subprocess.CalledProcessError(1, ['synthetic-lost-container-response'])
                 return Mock(stdout='')
             def process(args, **kwargs):
@@ -342,6 +348,82 @@ class ArtifactTests(unittest.TestCase):
                 self.assertIn(['docker', 'rm', '-f', op['smoke_container']], calls)
             self.assertFalse((runtime / 'artifact.json').exists())
             self.assertFalse(any(args[:3] == ['docker', 'volume', 'rm'] and args[-1] in artifact.VOLUMES for args in calls))
+
+    def test_offline_packaging_only_copies_explicit_public_artifacts(self):
+        calls = []
+        containers = []
+        def run(args, **kwargs):
+            calls.append(args)
+            if args[:2] == ['docker', 'inspect']:
+                return Mock(stdout=json.dumps([{'Config': {'User': '0:0', 'Labels': {'io.runix.artifact': 'owned'}},
+                    'Mounts': [], 'HostConfig': {'NetworkMode': 'none', 'Privileged': False, 'PortBindings': {}}}]))
+            return Mock(stdout=IMAGE if args[:2] == ['docker', 'commit'] else '')
+        with patch.object(artifact, 'command', side_effect=run):
+            self.assertEqual(artifact.package_image(self.output, 'runix-fs-local:owned', REVISION, 'owned', containers), IMAGE)
+        self.assertEqual(containers, ['runix-artifact-pack-owned'])
+        self.assertEqual(calls[0][calls[0].index('--network')+1], 'none')
+        self.assertIn('never', calls[0])
+        self.assertNotIn('--mount', calls[0])
+        self.assertNotIn('--privileged', calls[0])
+        copied = [Path(args[2]).name for args in calls if args[:2] == ['docker', 'cp']]
+        self.assertEqual(copied, [*artifact.BINARIES, 'LICENSE', 'NOTICE', 'README.upstream.md', 'build-receipt.json'])
+        commit = calls[-1]
+        self.assertEqual(commit[:2], ['docker', 'commit'])
+        self.assertIn('USER 1000:1000', commit)
+        self.assertIn('CMD ["--help"]', commit)
+        self.assertFalse(any('build' in args or 'pull' in args for args in calls))
+
+    def test_foreign_packaging_container_never_copied_or_committed(self):
+        containers = []
+        def run(args, **kwargs):
+            return Mock(stdout=json.dumps([{'Config': {'Labels': {'io.runix.artifact': 'foreign'}}}])
+                        if args[:2] == ['docker', 'inspect'] else '')
+        with patch.object(artifact, 'command', side_effect=run) as command, self.assertRaises(RuntimeError):
+            artifact.package_image(self.output, 'runix-fs-local:owned', REVISION, 'owned', containers)
+        self.assertEqual(containers, [])
+        self.assertFalse(any(call.args[0][:2] in (['docker', 'cp'], ['docker', 'commit']) for call in command.call_args_list))
+
+    def evidence(self):
+        evidence = self.root / 'evidence'
+        evidence.mkdir(exist_ok=True)
+        for name in ('payload.bin', 'read-before.bin', 'read-after.bin'):
+            (evidence / name).write_bytes(b'x' * 4194304)
+        (evidence / 'runtime-uid.txt').write_text('1000')
+        build = artifact.receipt(self.source, self.output, REVISION, TREE)
+        rows = []
+        for name in artifact.BINARIES:
+            rows.append(build['binaries'][name]['sha256'] + '  /opt/runix/bin/' + name)
+            (evidence / (name + '.version.json')).write_bytes((self.output / (name + '.version.json')).read_bytes())
+        (evidence / 'image-binaries.sha256').write_text('\n'.join(rows) + '\n')
+        script = self.root / 'smoke.sh'
+        script.write_text('synthetic-test-script')
+        return evidence, build, script, artifact.file_digest(script)
+
+    def test_actual_evidence_requires_data_uid_binary_checksums_and_versions(self):
+        evidence, build, script, script_digest = self.evidence()
+        self.assertEqual(artifact.validate_evidence(evidence, build, script, script_digest)['bytes'], 4194304)
+        original = (evidence / 'image-binaries.sha256').read_text()
+        for content in (original.replace(build['binaries']['curvine-cli']['sha256'], 'd' * 64),
+                        original + original, '', 'x' * 4097):
+            (evidence / 'image-binaries.sha256').write_text(content)
+            with self.assertRaises(ValueError):
+                artifact.validate_evidence(evidence, build, script, script_digest)
+        (evidence / 'image-binaries.sha256').write_text(original)
+        version = evidence / 'curvine-cli.version.json'
+        content = json.loads(version.read_text())
+        content['git_commit'] = 'd' * 7
+        version.write_text(json.dumps(content))
+        with self.assertRaises(ValueError):
+            artifact.validate_evidence(evidence, build, script, script_digest)
+
+    def test_corrupt_data_root_uid_or_changed_harness_refuse_passing_receipt(self):
+        for failure in ('data', 'uid', 'script'):
+            evidence, build, script, script_digest = self.evidence()
+            if failure == 'data': (evidence / 'read-after.bin').write_bytes(b'bad')
+            if failure == 'uid': (evidence / 'runtime-uid.txt').write_text('0')
+            if failure == 'script': script.write_text('changed-after-start')
+            with self.assertRaises(RuntimeError):
+                artifact.validate_evidence(evidence, build, script, script_digest)
 
     def test_missing_or_unavailable_inventory_never_proves_cleanup(self):
         for output in ('owned\n', 'owned-volume\n'):
