@@ -316,6 +316,32 @@ def final_cleanup(containers, volume, image_tag):
             command(['docker', 'image', 'rm', image_tag])
 
 
+def collect_smoke(runtime, name):
+    """Preserve synthetic failure evidence before owned volume removal."""
+    wait_error, diagnostic_errors = None, []
+    try:
+        result = subprocess.run(['docker', 'wait', name], check=True, timeout=360, capture_output=True, text=True)
+    except Exception as error:
+        wait_error = error
+    try:
+        with (runtime / 'smoke.log').open('w') as log:
+            subprocess.run(['docker', 'logs', name], check=True, timeout=30, stdout=log, stderr=subprocess.STDOUT)
+    except Exception:
+        diagnostic_errors.append('logs')
+    evidence = runtime / 'smoke'
+    try:
+        command(['docker', 'cp', name + ':/smoke/.', str(evidence)])
+    except Exception:
+        diagnostic_errors.append('files')
+    if wait_error is not None:
+        raise wait_error
+    if result.stdout.strip() != '0':
+        raise RuntimeError('Actual image engine smoke failed; synthetic diagnostics retained when available')
+    if diagnostic_errors:
+        raise RuntimeError('Actual smoke diagnostics incomplete')
+    return evidence
+
+
 def main(repo, revision):
     repo = Path(repo).resolve(strict=True)
     runtime = Path(tempfile.mkdtemp(prefix='runix-engine-artifact-'))
@@ -421,13 +447,7 @@ def main(repo, revision):
         validate_smoke(json.loads(command(['docker', 'inspect', smoke]).stdout)[0], smoke, volume, image_id,
                        script, script_digest['sha256'])
         print('Running actual isolated image write/read and crash-recovery gate.', flush=True)
-        result = subprocess.run(['docker', 'wait', smoke], check=True, timeout=360, capture_output=True, text=True)
-        with (runtime / 'smoke.log').open('w') as log:
-            subprocess.run(['docker', 'logs', smoke], check=True, timeout=30, stdout=log, stderr=subprocess.STDOUT)
-        if result.stdout.strip() != '0':
-            raise RuntimeError('Actual image engine smoke failed')
-        evidence = runtime / 'smoke'
-        command(['docker', 'cp', smoke + ':/smoke/.', str(evidence)])
+        evidence = collect_smoke(runtime, smoke)
         payload = validate_evidence(evidence, build, script, script_digest)
         owned_cleanup(containers, own_volume)
         containers, own_volume = [], None

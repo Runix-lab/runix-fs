@@ -782,3 +782,22 @@ identity, and reject changed mounted-script evidence. All 355 Python tests pass
 locally (26 artifact tests), plus source/whitespace checks. A fresh full runtime
 image gate is still required. No AWS resource, buyer purchase or public service
 was created during these fixes.
+
+
+2026-10-30 crash-recovery investigation: the actual image built from
+8a0d213c95374e3d14cf07431116679f86558fa2 passed source/runtime boundary checks
+and initial 4 MiB write/read, but failed simultaneous master/worker SIGKILL
+recovery with FileNotFound. No passing receipt or image was retained. A
+separate root/host-bind run with the same cached source binaries recovered
+4 MiB with identical SHA-256 before/after restart. That comparison does not
+validate the non-root image or establish a root cause. Journal acknowledgement,
+volume timing and runtime differences remain under investigation; do not add
+sleep to hide the failure or restore uncommitted metadata around Raft replay.
+
+Failure evidence contract: collect Docker logs and the synthetic /smoke files
+before removing the owned runtime/volume, even after nonzero exit or wait timeout.
+A collection failure must never yield a passing artifact. Two regression tests
+cover failure/timeout collection and missing diagnostics. All 357 Python tests
+pass locally (28 artifact tests); real runtime recovery remains an independent
+gate. No persistent infrastructure or customer purchase is authorized by this
+local diagnostic work.

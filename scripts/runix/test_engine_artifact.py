@@ -452,6 +452,32 @@ class ArtifactTests(unittest.TestCase):
             with self.assertRaises((RuntimeError, ValueError)):
                 artifact.validate_evidence(evidence, build, script, script_digest)
 
+    def test_failed_or_timed_out_runtime_preserves_synthetic_evidence(self):
+        for status in ('1', 'timeout'):
+            calls = []
+            def run(args, **kwargs):
+                calls.append(args)
+                if args[:2] == ['docker', 'wait']:
+                    if status == 'timeout':
+                        raise subprocess.TimeoutExpired('docker', 360)
+                    return Mock(stdout=status)
+                return Mock(stdout='')
+            with patch.object(artifact.subprocess, 'run', side_effect=run), \
+                    patch.object(artifact, 'command', return_value=Mock()) as copy:
+                with self.assertRaises((RuntimeError, subprocess.TimeoutExpired)):
+                    artifact.collect_smoke(self.root, 'owned-runtime')
+            self.assertIn(['docker', 'logs', 'owned-runtime'], calls)
+            copy.assert_called_once_with(['docker', 'cp', 'owned-runtime:/smoke/.', str(self.root / 'smoke')])
+
+    def test_missing_runtime_diagnostics_does_not_create_passing_evidence(self):
+        with patch.object(artifact.subprocess, 'run', return_value=Mock(stdout='0')), \
+                patch.object(artifact, 'command', side_effect=OSError('copy unavailable')):
+            with self.assertRaises(RuntimeError):
+                artifact.collect_smoke(self.root, 'owned-runtime')
+        with patch.object(artifact.subprocess, 'run', return_value=Mock(stdout='0')), \
+                patch.object(artifact, 'command', return_value=Mock()):
+            self.assertEqual(artifact.collect_smoke(self.root, 'owned-runtime'), self.root / 'smoke')
+
     def test_missing_or_unavailable_inventory_never_proves_cleanup(self):
         for output in ('owned\n', 'owned-volume\n'):
             with patch.object(artifact, 'command', return_value=Mock(stdout=output)), self.assertRaises(RuntimeError):
