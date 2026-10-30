@@ -671,3 +671,37 @@ The cached Python SDK image is linux/arm64 and must not be assumed to be an amd6
 engine runtime. No new engine compilation, self-contained release image, SBOM,
 provisioner or service availability is proven by this cache inspection. A pinned
 runnable artifact and real resource lifecycle remain the next delivery gates.
+
+## 2026-10-30 — source-pinned engine artifact implementation, runtime pending
+
+Previous goal turn was progress: browser source pushed, real CI success and
+engine-cache/runtime inspection. Continued local/draft-only scope; no cloud
+resource, image registry push, Marketplace purchase or public listener created.
+
+Implemented engine_artifact.py and its contract: independent full tracked Git
+snapshot pinned to an actual full commit, locked offline Cargo build in the
+cached amd64 tools image, actual compiler/source/binary hashes, local non-root
+image with unchanged internal binary names and Apache/Curvine notices, and a
+real image-only write/read/crash gate. Build/cache usage is checked first.
+The smoke supports a fixed absolute binary directory, retaining its old cache
+path default. No build-volume mount is allowed in the image smoke; read-only
+root filesystem, UID 1000, dropped capabilities, no-new-privileges, network none
+and no ports are checked. Passing receipts require actual payload comparisons
+and verified cleanup. No cluster or billable access is granted by this helper.
+
+Nineteen new tests cover source pinning/dirty/alternate snapshots, ELF/Rust/source
+mismatch, command/mount boundaries, image/config identity, partial/lost creation
+responses, ownership-only cleanup and cache preservation. Unit verification is
+not actual container delivery. Full-suite count and actual image outcomes must
+be recorded after completion, including failures rather than inferred success.
+
+First real source build started from d7051cff82e12e73fe469cf7cb8ba34b98a536e1;
+private operation directory:
+/var/folders/2x/cb5tfqrd52x2ddhb39yfn35w0000gn/T/runix-engine-artifact-fw32flc4/
+Actual container runix-fs-artifact-build was inspected running with Cargo
+compiling native and engine dependencies. This is a live build, not a completed
+artifact; inspect that exact handle/container before attempting another build.
+No prior cached binary hash is substituted for this build's output. Runtime
+image verification, S3/FUSE/security/SBOM/reproducibility and SaaS provisioning
+remain separate outstanding gates. Last confirmed AWS product remains Staging,
+unrefreshed; this work does not create an offer or publication claim.

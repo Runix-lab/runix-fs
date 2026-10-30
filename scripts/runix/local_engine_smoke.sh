@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
+bin_dir="${RUNIX_ENGINE_BIN_DIR:-/build/target/debug}"
+if [[ "$bin_dir" != /* || ! -x "$bin_dir/curvine-server" || ! -x "$bin_dir/curvine-cli" ]]; then
+    echo 'An absolute existing engine binary directory is required' >&2
+    exit 2
+fi
 crash_target="${RUNIX_SMOKE_CRASH_TARGET:-both}"
 if [[ "$crash_target" != both && "$crash_target" != master && "$crash_target" != worker ]]; then
     echo 'RUNIX_SMOKE_CRASH_TARGET must be both, master or worker' >&2
@@ -56,19 +61,19 @@ cleanup() {
 }
 trap cleanup EXIT
 start_services() {
-    /build/target/debug/curvine-server --service master --conf /smoke/cluster.toml >> master.out 2>&1 &
+    "$bin_dir/curvine-server" --service master --conf /smoke/cluster.toml >> master.out 2>&1 &
     master_pid=$!
-    /build/target/debug/curvine-server --service worker --conf /smoke/cluster.toml >> worker.out 2>&1 &
+    "$bin_dir/curvine-server" --service worker --conf /smoke/cluster.toml >> worker.out 2>&1 &
     worker_pid=$!
 }
-cli() { timeout 20 /build/target/debug/curvine-cli --conf /smoke/cluster.toml fs "$@"; }
+cli() { timeout 20 "$bin_dir/curvine-cli" --conf /smoke/cluster.toml fs "$@"; }
 ready() {
     for attempt in $(seq 1 40); do
         if ! kill -0 "$master_pid" || ! kill -0 "$worker_pid"; then
             tail -n 35 master.out worker.out
             return 1
         fi
-        if timeout 20 /build/target/debug/curvine-cli --conf /smoke/cluster.toml report json > report.json 2>> readiness.out &&
+        if timeout 20 "$bin_dir/curvine-cli" --conf /smoke/cluster.toml report json > report.json 2>> readiness.out &&
             python3 -c 'import json; assert json.load(open("report.json"))["available"] > 8388608' 2>> readiness.out; then
             cli mkdir /synthetic >> readiness.out 2>&1
             return 0
@@ -97,10 +102,10 @@ fi
 if [[ "$crash_target" == both ]]; then
     start_services
 elif [[ "$crash_target" == master ]]; then
-    /build/target/debug/curvine-server --service master --conf /smoke/cluster.toml >> master.out 2>&1 &
+    "$bin_dir/curvine-server" --service master --conf /smoke/cluster.toml >> master.out 2>&1 &
     master_pid=$!
 else
-    /build/target/debug/curvine-server --service worker --conf /smoke/cluster.toml >> worker.out 2>&1 &
+    "$bin_dir/curvine-server" --service worker --conf /smoke/cluster.toml >> worker.out 2>&1 &
     worker_pid=$!
 fi
 for attempt in $(seq 1 40); do

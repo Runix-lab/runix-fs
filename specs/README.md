@@ -16,7 +16,7 @@ implementation and verification evidence.
 | [Metering and storage ledger](marketplace-metering.md) | Exact byte-time conversion, durable sealed-record dispatch, leases, SDK responses and verification limits |
 | [Registration binding](marketplace-registration.md) | SDK resolution, private pending claims, durable organization authorization and unimplemented SSO/HTTP boundaries |
 | [Access-token verification](control-plane-auth.md) | Actual RSA access-token verification and the remaining identity-provider/browser-login setup |
-| [OIDC login foundation](control-plane-oidc.md) | Durable code/PKCE correlation, separate ID-token verification and real disposable-provider protocol evidence; browser sessions remain unimplemented |
+| [OIDC login foundation](control-plane-oidc.md) | Durable code/PKCE correlation, separate ID-token verification and real disposable-provider protocol evidence; production SSO remains unconfigured |
 | [Browser account](control-plane-browser.md) | Local OIDC/session UI, CSRF, personal organizations and pending-purchase handoff; no production deployment |
 | [Control-plane HTTP](control-plane-http.md) | Real local API routes, signed identities, registration handoff and tested readiness limits |
 | [Negative lifecycle events](marketplace-lifecycle.md) | Durable stop guards, held final usage, event replay and live-transport limitations |
@@ -24,6 +24,7 @@ implementation and verification evidence.
 | [PAYG license check](marketplace-payg-license.md) | Trusted update-event records, monotone stops and fresh internal agreement checks; no deployed activation |
 | [Event queue worker](marketplace-event-worker.md) | SDK polling, pinned deployment-profile checks, durable acknowledgement and archive replay handling; not deployed |
 | [Gateway research](marketplace-gateway-research.md) | Verified AI/API gateway listings and future product packaging, separate from FS launch |
+| [Engine artifact](engine-artifact.md) | Source-pinned offline image build, non-root isolated runtime gate and actual artifact receipts; not a production release |
 | [Local engine smoke](marketplace-local-smoke.md) | Write/read, historical crash failure, WAL fix, local S3-compatible write-through and recovery evidence |
 | [Offline backup restore](marketplace-backup-smoke.md) | Actual stopped-state and object export restored into a fresh local boundary; production backup remains unimplemented |
 | [Website](website-integration.md) | Public website and future authenticated console integration |
