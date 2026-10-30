@@ -647,3 +647,27 @@ opening the known product work page timed out. No current DOM/account identity,
 product state or review outcome was obtained from that attempt; titles are not
 proof of a valid AWS session. No form was submitted and no legal/bank/tax data
 was inspected. Do not infer a new seller or product status from this failure.
+
+## 2026-10-30 — engine runtime preparation and current local state
+
+Docker was not running at the start of this continuation. Started the already
+installed Docker Desktop using its CLI; the daemon now reports 28.5.1. No cloud
+resource, image download or unrelated container stop/restart command was issued.
+The existing engine build volume and pinned images remain available.
+
+An initial read-only probe mounted the build volume at /build/target and could
+not locate binaries. Source scripts and actual volume contents established that
+the correct mount is /build: the volume already contains target/. Corrected the
+probe rather than treating that wrong path as missing build output. All probe
+containers were --rm, network none, without published ports and with read-only
+volume mounts.
+
+Actual linux/amd64 tool-image inspection confirms cached curvine-server SHA-256
+707497ccfd450d5c7f6c252230819d0c4a9297328d74207b44f2bc2f4c640914 and curvine-cli
+f1f517005f18b5157c017d1759b0c5448a1efac9da3babc12a1f5b9f3f50dd12, matching the
+previous WAL-enabled engine evidence. The image reports glibc 2.34; server ldd
+requires libstdc++, libssl.so.3, libcrypto.so.3, libz, libgcc_s, libm and libc.
+The cached Python SDK image is linux/arm64 and must not be assumed to be an amd64
+engine runtime. No new engine compilation, self-contained release image, SBOM,
+provisioner or service availability is proven by this cache inspection. A pinned
+runnable artifact and real resource lifecycle remain the next delivery gates.
