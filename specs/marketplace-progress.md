@@ -746,3 +746,20 @@ changed harness and corrupt data/UID evidence (25 artifact tests total).
 Fresh local STS credential-chain inspection returned no_credentials; no seller
 API call or live account/product state was obtained, and no keys were requested.
 A new actual offline image run is still required before claiming verification.
+
+Offline-packaging commit 0fe7098be090297e2a026253f232f12fb9ad2db8 was pushed;
+GitHub Actions 41002415900 completed with success:
+https://github.com/Runix-lab/runix-fs/actions/runs/41002415900
+All 354 Python tests passed locally at that revision. The actual source compile
+finished in 44.14s, but packaging failed chmod on copied binary ownership and
+issued no passing receipt. This was a real construction-permission failure,
+not a passed image or a runtime filesystem result. Its owned resources were
+removed; no source/cache volumes or unrelated services were deleted.
+
+Corrected only construction-file ownership: chown copied binary/doc inputs to
+root with existing CHOWN capability before chmod. The runtime still uses UID1000
+and no capabilities. A real Docker package/execute probe against the captured
+0fe7098 binaries confirmed binary owner 0:0, runtime UID1000 and matching source
+metadata. Probe container/image cleanup completed. All 25 artifact unit tests
+pass including the ownership-order regression. Full image data/recovery still
+requires a fresh passing pipeline; no SaaS delivery or public status is inferred.

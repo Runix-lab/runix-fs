@@ -365,6 +365,8 @@ class ArtifactTests(unittest.TestCase):
         self.assertIn('never', calls[0])
         self.assertNotIn('--mount', calls[0])
         self.assertNotIn('--privileged', calls[0])
+        permission_script = next(args[-1] for args in calls if args[:2] == ['docker', 'exec'])
+        self.assertLess(permission_script.index('chown 0:0'), permission_script.index('chmod 0755'))
         copied = [Path(args[2]).name for args in calls if args[:2] == ['docker', 'cp']]
         self.assertEqual(copied, [*artifact.BINARIES, 'LICENSE', 'NOTICE', 'README.upstream.md', 'build-receipt.json'])
         commit = calls[-1]

@@ -201,6 +201,7 @@ def package_image(output, image_tag, revision, run_id, containers):
     for filename in ('LICENSE', 'NOTICE', 'README.upstream.md', 'build-receipt.json'):
         command(['docker', 'cp', str(output / filename), name + ':/usr/share/doc/runix-fs/' + filename])
     command(['docker', 'exec', '--user', '0:0', name, '/bin/sh', '-euc',
+        'chown 0:0 /opt/runix/bin/* /usr/share/doc/runix-fs/*; '
         'chmod 0755 /opt/runix/bin/curvine-server /opt/runix/bin/curvine-cli; '
         'chmod 0644 /usr/share/doc/runix-fs/*'])
     args = ['docker', 'commit']

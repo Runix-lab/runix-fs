@@ -110,3 +110,12 @@ References checked for the exact offline copy/config behavior:
 
 - https://docs.docker.com/reference/cli/docker/container/commit/
 - https://docs.docker.com/reference/cli/docker/container/cp/
+
+The first local copy/commit attempt reached construction but failed chmod on
+copied binary ownership. It issued no passing receipt; owned resources were
+cleaned. The constructor now explicitly chowns only the copied binary/doc files
+to root before setting their modes, using its existing CHOWN capability rather
+than granting FOWNER or additional runtime permissions. A real separate Docker
+probe verified root-owned binaries execute as UID1000 and report the captured
+source; its construction container and probe image were removed. The full data
+smoke remains a separate required passing gate after this correction.
