@@ -72,3 +72,18 @@ Initial implementation verification: 19 new unit tests cover source, compiler,
 ELF architecture/executable validation, immutable image configuration, runtime
 boundary, ownership, failed/lost creation responses and cleanup. Actual pipeline
 verification is separate; a running build or unit suite is not a passing image.
+
+First actual pipeline attempt completed the real locked/offline Cargo build in
+22m25s from d7051cff82e12e73fe469cf7cb8ba34b98a536e1. It then stopped before
+image creation: the initial adapter incorrectly expected CLI's human --version
+to contain a commit. Actual source inspection and execution established that
+both components already expose --version-json with component/git_commit and
+protocol fields. The server human version included d7051cf; the CLI human
+version contained only its package version. No CLI/Rust behavior was changed.
+
+The adapter now validates the existing bounded structured component metadata,
+rejects duplicate/unknown fields, wrong source/component, invalid protocol and
+mismatched server/CLI protocols. Both actual captured binaries reported d7051cf
+and protocol 1 through that interface. The first failed gate issued no passing
+receipt and its builder was removed. Native compilation success alone is not
+counted as image validation. Two regression tests were added (21 artifact tests).

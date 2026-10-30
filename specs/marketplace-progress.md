@@ -705,3 +705,22 @@ No prior cached binary hash is substituted for this build's output. Runtime
 image verification, S3/FUSE/security/SBOM/reproducibility and SaaS provisioning
 remain separate outstanding gates. Last confirmed AWS product remains Staging,
 unrefreshed; this work does not create an offer or publication claim.
+
+Implementation ac4751b9929117b345879e687d94181bfb0e7cbb was pushed normally.
+GitHub Actions 40999127513 completed with success for that exact SHA; migration
+and Linux fault-runtime subset jobs passed:
+https://github.com/Runix-lab/runix-fs/actions/runs/40999127513
+At that revision, all 348 Python tests passed locally; actual image delivery
+was still pending and was not represented as a CI-proven capability.
+
+The first real source build finished in 22m25s, then correctly stopped at the
+artifact gate before any image was accepted. The adapter had selected the CLI's
+human --version output, which lacks a commit. Both components already support
+--version-json; actual execution of the captured server and CLI returned source
+d7051cf/protocol 1. Updated the adapter to validate that existing structured
+interface, component/source/protocol identity, bounded schema and server/CLI
+protocol agreement. No Rust/CLI interface, product model or source identifier
+was invented or modified. Added 2 regression tests; all 350 Python tests pass
+locally. The failed operation has no passing receipt and its builder is gone.
+A fresh captured-source pipeline using the corrected adapter is required before
+claiming a verified image. No cloud resource or buyer transaction was created.

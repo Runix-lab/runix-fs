@@ -35,7 +35,7 @@ class ArtifactTests(unittest.TestCase):
             path = self.output / name
             path.write_bytes(header + b'synthetic-not-a-runnable-binary')
             path.chmod(0o755)
-            (self.output / (name + '.version')).write_text('synthetic test (commit: ' + REVISION[:7] + ')')
+            (self.output / (name + '.version.json')).write_text(json.dumps(dict(component=name.removeprefix('curvine-'), release_version='0.2.2', git_commit=REVISION[:7], git_tag='', git_branch='', protocol_version=1, min_protocol_version=1, capabilities=[])))
 
     def image(self):
         return dict(Id=IMAGE, Os='linux', Architecture='amd64', Config=dict(User='1000:1000',
@@ -61,13 +61,39 @@ class ArtifactTests(unittest.TestCase):
 
     def test_wrong_source_old_or_dirty_binary_and_wrong_compiler_refused(self):
         for name, value in (('source.txt', 'd' * 40), ('compiler.txt', 'rustc 1.92.0 (abcdef 2025-01-01)'),
-                            ('curvine-server.version', 'old-commit'), ('curvine-cli.version', REVISION[:7] + '-dirty')):
+                            ('curvine-server.version.json', 'old-commit'), ('curvine-cli.version.json', REVISION[:7] + '-dirty')):
             path = self.output / name
             original = path.read_bytes()
             path.write_text(value)
             with self.subTest(name=name), self.assertRaises(ValueError):
                 artifact.receipt(self.source, self.output, REVISION, TREE)
             path.write_bytes(original)
+
+    def test_structured_version_claims_not_human_package_output(self):
+        path = self.output / 'curvine-cli.version.json'
+        original = json.loads(path.read_text())
+        for key, value in (('git_commit', 'd' * 7), ('git_commit', 'a' * 6), ('component', 'server'),
+                           ('protocol_version', True), ('min_protocol_version', 2),
+                           ('git_branch', 'branch-dirty'), ('release_version', ''), ('capabilities', ['bad token']),
+                           ('capabilities', ['x'] * 33), ('git_tag', None)):
+            path.write_text(json.dumps(dict(original, **{key: value})))
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                artifact.component_version(path, 'cli', REVISION)
+        for raw in ('curvine-cli 0.2.2', '{"component":"cli","component":"cli"}', 'x' * 4097,
+                    json.dumps(dict(original, unexpected='extra'))):
+            path.write_text(raw)
+            with self.assertRaises(ValueError):
+                artifact.component_version(path, 'cli', REVISION)
+        path.write_text(json.dumps(original))
+        self.assertEqual(artifact.component_version(path, 'cli', REVISION)['git_commit'], REVISION[:7])
+
+    def test_server_and_cli_protocol_versions_must_match(self):
+        path = self.output / 'curvine-cli.version.json'
+        value = json.loads(path.read_text())
+        value['protocol_version'] = 2
+        path.write_text(json.dumps(value))
+        with self.assertRaises(ValueError):
+            artifact.receipt(self.source, self.output, REVISION, TREE)
 
     def test_elf_architecture_executable_regular_file_and_symlink_checks(self):
         path = self.output / 'curvine-server'

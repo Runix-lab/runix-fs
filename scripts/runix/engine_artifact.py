@@ -30,7 +30,7 @@ git diff --quiet
 cargo build --locked --offline --jobs 2 -p curvine-server -p curvine-cli
 for binary in curvine-server curvine-cli; do
     install -m 0755 /build/target/debug/$binary /artifact/$binary
-    /artifact/$binary --version > /artifact/$binary.version
+    /artifact/$binary --version-json > /artifact/$binary.version.json
  done
 git diff --quiet
 '''
@@ -109,14 +109,49 @@ def receipt(source, output, revision, tree):
     binaries = {}
     for name in BINARIES:
         binaries[name] = file_digest(output / name, elf=True)
-        version = (output / (name + '.version')).read_text().strip()
-        if len(version) > 4096 or revision[:7] not in version or 'dirty' in version.lower():
-            raise ValueError('Binary does not identify clean captured source')
+        version = component_version(output / (name + '.version.json'), name.removeprefix('curvine-'), revision)
         binaries[name]['version'] = version
+    if any(binaries[name]['version'][field] != binaries[BINARIES[0]]['version'][field]
+           for name in BINARIES for field in ('protocol_version', 'min_protocol_version')):
+        raise ValueError('Component protocols differ')
     return {'schema': 1, 'source': SOURCE_URL, 'source_commit': revision, 'source_tree': tree,
             'builder_image': TOOL_IMAGE, 'platform': 'linux/amd64', 'compiler': compiler,
             'cargo_lock': file_digest(source / 'Cargo.lock'), 'binaries': binaries,
             'production_release': False, 'bit_reproducibility_verified': False}
+
+
+def component_version(path, component, revision):
+    raw = path.read_bytes()
+    if len(raw) > 4096:
+        raise ValueError('Bounded version metadata required')
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Duplicate version field')
+            result[key] = value
+        return result
+    value = json.loads(raw, object_pairs_hook=unique,
+                       parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Invalid JSON constant')))
+    if (not isinstance(value, dict) or set(value) != {'component', 'release_version', 'git_commit',
+            'git_tag', 'git_branch', 'protocol_version', 'min_protocol_version', 'capabilities'}
+            or value.get('component') != component
+            or not isinstance(value.get('git_commit'), str)
+            or not re.fullmatch(r'[a-f0-9]{7,40}', value['git_commit'])
+            or not revision.startswith(value['git_commit'])
+            or any(type(value.get(key)) is not int for key in ('protocol_version', 'min_protocol_version'))
+            or not 1 <= value['min_protocol_version'] <= value['protocol_version']):
+        raise ValueError('Component source/protocol identity mismatch')
+    for key in ('release_version', 'git_tag', 'git_branch'):
+        item = value.get(key)
+        if (not isinstance(item, str) or len(item) > 255 or any(ord(char) < 32 for char in item)
+                or 'dirty' in item.lower() or (key == 'release_version' and not item)):
+            raise ValueError('Invalid component version metadata')
+    caps = value.get('capabilities')
+    if (not isinstance(caps, list) or len(caps) > 32
+            or any(not isinstance(cap, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', cap) for cap in caps)):
+        raise ValueError('Invalid component capabilities')
+    return value
 
 
 def dockerfile():
