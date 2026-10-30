@@ -828,3 +828,22 @@ CI41029041908 succeeded: https://github.com/Runix-lab/runix-fs/actions/runs/4102
 AWS product-tab opening still timed out through the browser extension. No fresh
 seller/account/product DOM, change request, live purchase or public visibility
 was obtained. Earlier Staging evidence remains historical. No AWS spend occurred.
+
+
+Completed controlled journal failure injection, 2026-10-30. Same captured8a0d213
+binary SHA-256, UID1000/fresh named-volume/no-network boundary; only the private
+harness set writer_flush_batch_ms=60000. Initial4194304-byte upload/download
+matched payload SHA-256 c48f6959f3eb33ec6c181ab74366d8d881ee59141dc61b14af59704542725e45.
+Immediate master/worker SIGKILL restarted with committed Raft index1 and all
+recovery attempts returned FileNotFound (fixture exit1). Full synthetic logs,
+config and database evidence were retained outside Git. Owned container/volume
+cleanup completed. This deliberately delayed batching reproduces an acknowledged
+write outside the committed journal; it does not prove the earlier default-
+profile failure has no other cause. No passing image receipt was produced.
+
+Commit8500726 specifies the pending repair in specs/architecture.md: ordered
+commit acknowledgement before successful journaled mutation RPC responses,
+namespace guards released before waiting, failure/leader-change/retry/concurrency
+coverage and repeat real image crash gates. The Rust repair is not implemented.
+Current branch remains local/draft scope; no production budget, AWS resource,
+customer purchase, change application or public buyer page was created.
